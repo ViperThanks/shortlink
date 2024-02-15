@@ -1,5 +1,6 @@
 package github.viperthanks.shortlink.admin;
 
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -11,6 +12,7 @@ import org.springframework.context.ConfigurableApplicationContext;
  * @since 15/2/2024
  */
 @SpringBootApplication
+@MapperScan("github.viperthanks.shortlink.admin.dao.mapper")
 public class ShortLinkAdminApplication {
     public static void main(String[] args) {
         ConfigurableApplicationContext context = SpringApplication.run(ShortLinkAdminApplication.class, args);
