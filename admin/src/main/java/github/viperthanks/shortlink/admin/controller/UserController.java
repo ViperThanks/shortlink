@@ -37,7 +37,7 @@ public class UserController {
     @RequestMapping(value = "/api/shortlink/v1/actual/user/{username}")
     public Result<UserActualRespDTO> getActualUserByUsername(@PathVariable(value = "username") String username) {
         UserRespDTO userRespDTO = userService.getUserByUsername(username);
-        return Results.success(BeanUtil.copyProperties(userRespDTO, UserActualRespDTO.class));
+        return Results.success(BeanUtil.toBean(userRespDTO, UserActualRespDTO.class));
     }
 
     /**
