@@ -2,6 +2,7 @@ package github.viperthanks.shortlink.admin.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import github.viperthanks.shortlink.admin.dao.entity.UserDO;
+import github.viperthanks.shortlink.admin.dto.req.UserRegisterReqDTO;
 import github.viperthanks.shortlink.admin.dto.resp.UserRespDTO;
 
 /**
@@ -11,5 +12,18 @@ import github.viperthanks.shortlink.admin.dto.resp.UserRespDTO;
  * @since 15/2/2024
  */
 public interface UserService extends IService<UserDO> {
+    /**
+     * 根据用户名查询用户
+     */
     UserRespDTO getUserByUsername(final String username);
+
+    /**
+     * 检查用户名是否存在，如果存在返回True
+     */
+    Boolean hasUsername(final String username);
+
+    /**
+     * 注册用户
+     */
+    void register(final UserRegisterReqDTO requestParam);
 }
