@@ -70,7 +70,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper,UserDO> implements U
         if (hasUsername(requestParam.getUsername())) {
             throw new ClientException(UserErrorCodeEnum.USER_NAME_EXIST);
         }
-        RLock lock = redissonClient.getLock(RedisCacheConstant.LOCK_USER_REGISTER_KEY + requestParam.getUsername());
+        RLock lock = redissonClient.getLock(RedisCacheConstant.getCacheKey(RedisCacheConstant.LOCK_USER_REGISTER_KEY, requestParam.getUsername()));
         try {
             if (!lock.tryLock()) {
                 throw new ClientException(UserErrorCodeEnum.USER_NAME_EXIST);
@@ -83,6 +83,5 @@ public class UserServiceImpl extends ServiceImpl<UserMapper,UserDO> implements U
         } finally {
             lock.unlock();
         }
-
     }
 }
