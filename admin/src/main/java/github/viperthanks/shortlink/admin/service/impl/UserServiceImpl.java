@@ -1,7 +1,10 @@
 package github.viperthanks.shortlink.admin.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.lang.UUID;
+import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import github.viperthanks.shortlink.admin.common.constant.RedisCacheConstant;
@@ -11,19 +14,29 @@ import github.viperthanks.shortlink.admin.common.convention.exception.ServiceExc
 import github.viperthanks.shortlink.admin.common.enums.UserErrorCodeEnum;
 import github.viperthanks.shortlink.admin.dao.entity.UserDO;
 import github.viperthanks.shortlink.admin.dao.mapper.UserMapper;
+import github.viperthanks.shortlink.admin.dto.req.UserCheckLoginReqDTO;
+import github.viperthanks.shortlink.admin.dto.req.UserLoginReqDTO;
 import github.viperthanks.shortlink.admin.dto.req.UserRegisterReqDTO;
+import github.viperthanks.shortlink.admin.dto.req.UserUpdateReqDTO;
+import github.viperthanks.shortlink.admin.dto.resp.UserLoginRespDTO;
 import github.viperthanks.shortlink.admin.dto.resp.UserRespDTO;
 import github.viperthanks.shortlink.admin.service.UserService;
+import github.viperthanks.shortlink.admin.util.SQLResultHelper;
 import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /**
  * desc: 用户 业务层实现
@@ -31,14 +44,18 @@ import java.util.Objects;
  * @author Viper Thanks
  * @since 15/2/2024
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
-public class UserServiceImpl extends ServiceImpl<UserMapper,UserDO> implements UserService {
+public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements UserService {
 
     private final RBloomFilter<String> userRegisterCachePenetrationBloomFilter;
 
     private final RedissonClient redissonClient;
+
+    private final StringRedisTemplate stringRedisTemplate;
     @Override
+
     public UserRespDTO getUserByUsername(final String username) {
         LambdaQueryWrapper<UserDO> queryWrapper = Wrappers.lambdaQuery(UserDO.class)
                 .eq(StringUtils.isNotBlank(username), UserDO::getUsername, username);
@@ -83,5 +100,74 @@ public class UserServiceImpl extends ServiceImpl<UserMapper,UserDO> implements U
         } finally {
             lock.unlock();
         }
+    }
+
+    /**
+     * 更新用户
+     */
+    @Override
+    public void update(final UserUpdateReqDTO requestParam) {
+        //todo 验证用户是否为登录用户
+        LambdaUpdateWrapper<UserDO> lambdaUpdateWrapper = Wrappers.lambdaUpdate(UserDO.class).eq(UserDO::getUsername, requestParam.getUsername());
+        int effectRow = baseMapper.update(BeanUtil.toBean(requestParam, UserDO.class), lambdaUpdateWrapper);
+        if (SQLResultHelper.isIllegalDMLResult(effectRow)) {
+            throw new ServiceException(UserErrorCodeEnum.USER_UPDATE_ERROR);
+        }
+    }
+
+    /**
+     * 用户登录
+     *
+     * @param requestParam 用户登录请求dto
+     */
+    @Override
+    public UserLoginRespDTO login(final UserLoginReqDTO requestParam) {
+        if (StringUtils.isBlank(requestParam.getUsername())) {
+            throw new ClientException(UserErrorCodeEnum.USER_NAME_ERROR);
+        }
+        if (StringUtils.isBlank(requestParam.getPassword())) {
+            throw new ClientException(BaseErrorCode.PASSWORD_SHORT_ERROR);
+        }
+        final LambdaQueryWrapper<UserDO> queryWrapper = Wrappers.lambdaQuery(UserDO.class)
+                .eq(UserDO::getUsername, requestParam.getUsername())
+                .eq(UserDO::getDelFlag, 0)
+                .eq(UserDO::getPassword, requestParam.getPassword());
+        final UserDO userDO = baseMapper.selectOne(queryWrapper);
+        if (Objects.isNull(userDO)) {
+            throw new ClientException(UserErrorCodeEnum.USER_NOT_EXIST);
+        }
+        String key = RedisCacheConstant.LOGIN_USER_PREFIX + requestParam.getUsername();
+        if (BooleanUtils.isTrue(stringRedisTemplate.hasKey(key))) {
+            throw new ClientException("用户已经登录");
+        }
+        final String uuid = UUID.randomUUID().toString();
+        stringRedisTemplate.opsForHash().put(key, uuid, JSON.toJSONString(userDO));
+        stringRedisTemplate.expire(key, 30, TimeUnit.MINUTES);
+        return new UserLoginRespDTO(uuid);
+    }
+
+    /**
+     * 检查用户是否已经登录
+     */
+    @Override
+    public Boolean checkLogin(final UserCheckLoginReqDTO requestParam) {
+        if (StringUtils.isAnyBlank(requestParam.getUsername(), requestParam.getToken())) {
+            return false;
+        }
+        String key = RedisCacheConstant.LOGIN_USER_PREFIX + requestParam.getUsername();
+        Object userDOJson = stringRedisTemplate.opsForHash().get(key, requestParam.getToken());
+        if (ObjectUtils.isEmpty(userDOJson)) {
+            return false;
+        }
+        try {
+            UserDO userDO = JSON.parseObject((String) userDOJson, UserDO.class);
+            if (ObjectUtils.isNotEmpty(userDO)) {
+                return true;
+            }
+        } catch (Exception e) {
+            log.error("[用户] -> [检查登录] - 用户名 ：{} 存在异常的key : {} ", requestParam.getUsername(), key);
+            return false;
+        }
+        return false;
     }
 }

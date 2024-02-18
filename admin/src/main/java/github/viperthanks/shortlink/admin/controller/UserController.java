@@ -3,8 +3,12 @@ package github.viperthanks.shortlink.admin.controller;
 import cn.hutool.core.bean.BeanUtil;
 import github.viperthanks.shortlink.admin.common.convention.result.Result;
 import github.viperthanks.shortlink.admin.common.convention.result.Results;
+import github.viperthanks.shortlink.admin.dto.req.UserCheckLoginReqDTO;
+import github.viperthanks.shortlink.admin.dto.req.UserLoginReqDTO;
 import github.viperthanks.shortlink.admin.dto.req.UserRegisterReqDTO;
+import github.viperthanks.shortlink.admin.dto.req.UserUpdateReqDTO;
 import github.viperthanks.shortlink.admin.dto.resp.UserActualRespDTO;
+import github.viperthanks.shortlink.admin.dto.resp.UserLoginRespDTO;
 import github.viperthanks.shortlink.admin.dto.resp.UserRespDTO;
 import github.viperthanks.shortlink.admin.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -52,10 +56,37 @@ public class UserController {
     /**
      * 注册用户
      */
-    @RequestMapping(value = "/api/shortlink/v1/register", method = RequestMethod.POST)
+    @RequestMapping(value = "/api/shortlink/v1/user", method = RequestMethod.POST)
     public Result<Void> register(@RequestBody UserRegisterReqDTO requestParam) {
         userService.register(requestParam);
         return Results.success();
     }
+
+    /**
+     * 更新用户
+     */
+    @RequestMapping(value = "/api/shortlink/v1/user", method = RequestMethod.PUT)
+    public Result<Void> update(@RequestBody UserUpdateReqDTO requestParam) {
+        userService.update(requestParam);
+        return Results.success();
+    }
+
+    /**
+     * 用户登录
+     */
+    @RequestMapping(value = "/api/shortlink/v1/user/login", method = RequestMethod.POST)
+    public Result<UserLoginRespDTO> login(@RequestBody UserLoginReqDTO requestParam) {
+        return Results.success(userService.login(requestParam));
+    }
+
+    /**
+     * 用户登录
+     */
+    @RequestMapping(value = "/api/shortlink/v1/user/check-login", method = RequestMethod.POST)
+    public Result<Boolean> checkLogin(@RequestBody UserCheckLoginReqDTO requestParam) {
+        return Results.success(userService.checkLogin(requestParam));
+    }
+
+
 
 }
