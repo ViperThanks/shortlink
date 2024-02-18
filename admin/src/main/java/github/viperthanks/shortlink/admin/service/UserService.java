@@ -2,10 +2,7 @@ package github.viperthanks.shortlink.admin.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import github.viperthanks.shortlink.admin.dao.entity.UserDO;
-import github.viperthanks.shortlink.admin.dto.req.UserCheckLoginReqDTO;
-import github.viperthanks.shortlink.admin.dto.req.UserLoginReqDTO;
-import github.viperthanks.shortlink.admin.dto.req.UserRegisterReqDTO;
-import github.viperthanks.shortlink.admin.dto.req.UserUpdateReqDTO;
+import github.viperthanks.shortlink.admin.dto.req.*;
 import github.viperthanks.shortlink.admin.dto.resp.UserLoginRespDTO;
 import github.viperthanks.shortlink.admin.dto.resp.UserRespDTO;
 
@@ -47,4 +44,10 @@ public interface UserService extends IService<UserDO> {
      * 检查用户是否已经登录
      */
     Boolean checkLogin(final UserCheckLoginReqDTO requestParam);
+
+    /**
+     * 登出功能
+     * @param requestParam
+     */
+    void logout(UserLogoutReqDTO requestParam);
 }

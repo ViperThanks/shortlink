@@ -14,10 +14,7 @@ import github.viperthanks.shortlink.admin.common.convention.exception.ServiceExc
 import github.viperthanks.shortlink.admin.common.enums.UserErrorCodeEnum;
 import github.viperthanks.shortlink.admin.dao.entity.UserDO;
 import github.viperthanks.shortlink.admin.dao.mapper.UserMapper;
-import github.viperthanks.shortlink.admin.dto.req.UserCheckLoginReqDTO;
-import github.viperthanks.shortlink.admin.dto.req.UserLoginReqDTO;
-import github.viperthanks.shortlink.admin.dto.req.UserRegisterReqDTO;
-import github.viperthanks.shortlink.admin.dto.req.UserUpdateReqDTO;
+import github.viperthanks.shortlink.admin.dto.req.*;
 import github.viperthanks.shortlink.admin.dto.resp.UserLoginRespDTO;
 import github.viperthanks.shortlink.admin.dto.resp.UserRespDTO;
 import github.viperthanks.shortlink.admin.service.UserService;
@@ -117,7 +114,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
 
     /**
      * 用户登录
-     *
+     * todo 基于jwt重构
      * @param requestParam 用户登录请求dto
      */
     @Override
@@ -169,5 +166,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
             return false;
         }
         return false;
+    }
+
+    @Override
+    public void logout(UserLogoutReqDTO requestParam) {
+        if (StringUtils.isAnyBlank(requestParam.getUsername(), requestParam.getToken())) {
+            throw new ClientException("参数错误");
+        }
+        if (checkLogin(BeanUtil.toBean(requestParam, UserCheckLoginReqDTO.class))) {
+            stringRedisTemplate.delete(RedisCacheConstant.LOGIN_USER_PREFIX + requestParam.getUsername());
+        }else {
+            throw new ClientException("用户Token不存在或用户未登录");
+        }
     }
 }

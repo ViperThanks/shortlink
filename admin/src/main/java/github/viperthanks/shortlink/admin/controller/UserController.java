@@ -3,10 +3,7 @@ package github.viperthanks.shortlink.admin.controller;
 import cn.hutool.core.bean.BeanUtil;
 import github.viperthanks.shortlink.admin.common.convention.result.Result;
 import github.viperthanks.shortlink.admin.common.convention.result.Results;
-import github.viperthanks.shortlink.admin.dto.req.UserCheckLoginReqDTO;
-import github.viperthanks.shortlink.admin.dto.req.UserLoginReqDTO;
-import github.viperthanks.shortlink.admin.dto.req.UserRegisterReqDTO;
-import github.viperthanks.shortlink.admin.dto.req.UserUpdateReqDTO;
+import github.viperthanks.shortlink.admin.dto.req.*;
 import github.viperthanks.shortlink.admin.dto.resp.UserActualRespDTO;
 import github.viperthanks.shortlink.admin.dto.resp.UserLoginRespDTO;
 import github.viperthanks.shortlink.admin.dto.resp.UserRespDTO;
@@ -80,12 +77,23 @@ public class UserController {
     }
 
     /**
-     * 用户登录
+     * 用户登出
+     */
+    @RequestMapping(value = "/api/shortlink/v1/user/logout", method = RequestMethod.POST)
+    public Result<Void> logout(@RequestBody UserLogoutReqDTO requestParam) {
+        userService.logout(requestParam);
+        return Results.success();
+    }
+
+    /**
+     * 检查用户是否登录
      */
     @RequestMapping(value = "/api/shortlink/v1/user/check-login", method = RequestMethod.POST)
     public Result<Boolean> checkLogin(@RequestBody UserCheckLoginReqDTO requestParam) {
         return Results.success(userService.checkLogin(requestParam));
     }
+
+
 
 
 
