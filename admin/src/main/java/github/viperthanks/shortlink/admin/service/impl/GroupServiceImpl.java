@@ -41,6 +41,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
         //构造GroupDO
         GroupDO groupDO = GroupDO.builder()
                 .gid(gid)
+                .sortOrder(0)
                 .name(groupName)
                 .build();
         int effectRow = baseMapper.insert(groupDO);
