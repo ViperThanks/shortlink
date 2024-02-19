@@ -1,4 +1,4 @@
-package github.viperthanks.shortlink.admin.common.convention.dao;
+package github.viperthanks.shortlink.admin.common.convention.database;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -9,7 +9,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * desc: 所有实体的父类
+ * desc: 数据库持久层对象基本属性
  *
  * @author Viper Thanks
  * @since 15/2/2024
