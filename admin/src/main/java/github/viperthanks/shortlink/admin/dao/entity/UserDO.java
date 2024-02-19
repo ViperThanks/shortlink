@@ -1,7 +1,7 @@
 package github.viperthanks.shortlink.admin.dao.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
-import github.viperthanks.shortlink.admin.common.convention.dao.BaseDO;
+import github.viperthanks.shortlink.admin.common.convention.database.BaseDO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

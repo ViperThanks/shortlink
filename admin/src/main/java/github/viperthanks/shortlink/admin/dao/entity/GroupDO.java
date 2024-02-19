@@ -2,9 +2,8 @@ package github.viperthanks.shortlink.admin.dao.entity;
 
 
 import com.baomidou.mybatisplus.annotation.TableName;
-import github.viperthanks.shortlink.admin.common.convention.dao.BaseDO;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import github.viperthanks.shortlink.admin.common.convention.database.BaseDO;
+import lombok.*;
 
 /**
  * desc:短链接分组实体
@@ -15,6 +14,9 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @TableName(value = "t_group")
 public class GroupDO extends BaseDO {
 

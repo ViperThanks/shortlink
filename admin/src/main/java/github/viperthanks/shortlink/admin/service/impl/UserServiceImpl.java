@@ -18,7 +18,7 @@ import github.viperthanks.shortlink.admin.dto.req.*;
 import github.viperthanks.shortlink.admin.dto.resp.UserLoginRespDTO;
 import github.viperthanks.shortlink.admin.dto.resp.UserRespDTO;
 import github.viperthanks.shortlink.admin.service.UserService;
-import github.viperthanks.shortlink.admin.util.SQLResultHelper;
+import github.viperthanks.shortlink.admin.toolkit.SQLResultHelper;
 import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

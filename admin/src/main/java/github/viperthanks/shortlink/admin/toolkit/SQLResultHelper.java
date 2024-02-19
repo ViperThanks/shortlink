@@ -1,4 +1,4 @@
-package github.viperthanks.shortlink.admin.util;
+package github.viperthanks.shortlink.admin.toolkit;
 
 /**
  * desc: SQL结果工具类
