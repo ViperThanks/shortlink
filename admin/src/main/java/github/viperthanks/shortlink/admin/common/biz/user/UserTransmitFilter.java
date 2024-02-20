@@ -55,6 +55,7 @@ public class UserTransmitFilter implements Filter {
                 log.error("解析时出错，username ： {}， token：{}", username, token, e);
                 UserContext.removeUser();
                 returnJSON(servletResponse, "系统异常");
+                return;
             }
         }
         try {
