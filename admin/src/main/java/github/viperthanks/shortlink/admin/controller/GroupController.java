@@ -7,10 +7,7 @@ import github.viperthanks.shortlink.admin.dto.req.ShortLinkGroupUpdateReqDTO;
 import github.viperthanks.shortlink.admin.dto.resp.ShortLinkGroupRespDTO;
 import github.viperthanks.shortlink.admin.service.GroupService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -40,6 +37,15 @@ public class GroupController {
     @RequestMapping(value = "/api/shortlink/v1/group", method = RequestMethod.PUT)
     public Result<Void> updateGroup(@RequestBody ShortLinkGroupUpdateReqDTO requestParam) {
         groupService.updateGroup(requestParam);
+        return Results.success();
+    }
+
+    /**
+     * 删除短链接分组
+     */
+    @RequestMapping(value = "/api/shortlink/v1/group", method = RequestMethod.DELETE)
+    public Result<Void> updateGroup(@RequestParam(value = "gid") String gid) {
+        groupService.deleteGroup(gid);
         return Results.success();
     }
 

@@ -111,6 +111,23 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
         }
     }
 
+    @Override
+    public void deleteGroup(String gid) {
+        if (StringUtils.isAnyBlank(gid)) {
+            throw new ClientException("参数错误");
+        }
+        LambdaUpdateWrapper<GroupDO> updateWrapper = Wrappers.lambdaUpdate(GroupDO.class)
+                .eq(GroupDO::getGid, gid)
+                .eq(GroupDO::getUsername, UserContext.getUsername())
+                .eq(GroupDO::getDelFlag, 0);
+        GroupDO groupDO = new GroupDO();
+        groupDO.setDelFlag(1);
+        int update = baseMapper.update(groupDO, updateWrapper);
+        if (SQLResultHelper.isIllegalDMLResult(update)) {
+            throw new ServiceException("删除失败，请重试");
+        }
+    }
+
     /**
      * 该gid是否存在数据库
      */
