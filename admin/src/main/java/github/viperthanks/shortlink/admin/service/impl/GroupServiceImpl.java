@@ -2,6 +2,7 @@ package github.viperthanks.shortlink.admin.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import github.viperthanks.shortlink.admin.common.biz.user.UserContext;
@@ -10,6 +11,7 @@ import github.viperthanks.shortlink.admin.common.convention.exception.ServiceExc
 import github.viperthanks.shortlink.admin.dao.entity.GroupDO;
 import github.viperthanks.shortlink.admin.dao.mapper.GroupMapper;
 import github.viperthanks.shortlink.admin.dto.req.ShortLinkGroupSaveReqDTO;
+import github.viperthanks.shortlink.admin.dto.req.ShortLinkGroupUpdateReqDTO;
 import github.viperthanks.shortlink.admin.dto.resp.ShortLinkGroupRespDTO;
 import github.viperthanks.shortlink.admin.service.GroupService;
 import github.viperthanks.shortlink.admin.toolkit.RandomStringGenerator;
@@ -81,6 +83,32 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
                 .orderByDesc(Arrays.asList(GroupDO::getSortOrder, GroupDO::getUpdateTime));
         List<GroupDO> groupDOList = baseMapper.selectList(wrapper);
         return BeanUtil.copyToList(groupDOList,ShortLinkGroupRespDTO.class);
+    }
+
+    /**
+     * 修改短链接组
+     */
+    @Override
+    public void updateGroup(ShortLinkGroupUpdateReqDTO requestParam) {
+        if (StringUtils.isAnyBlank(requestParam.getGid(), requestParam.getName())) {
+            throw new ClientException("参数错误");
+        }
+        LambdaQueryWrapper<GroupDO> countWrapper = Wrappers.lambdaQuery(GroupDO.class)
+                .eq(GroupDO::getName, requestParam.getName())
+                .eq(GroupDO::getUsername, UserContext.getUsername())
+                .eq(GroupDO::getDelFlag, 0);
+        Long count = baseMapper.selectCount(countWrapper);
+        if (SQLResultHelper.isLegalCountResult(count)) {
+            throw new ClientException("短链接组有重复的名字");
+        }
+        LambdaUpdateWrapper<GroupDO> updateWrapper = Wrappers.lambdaUpdate(GroupDO.class)
+                .eq(GroupDO::getGid, requestParam.getGid())
+                .eq(GroupDO::getUsername, UserContext.getUsername())
+                .set(GroupDO::getName, requestParam.getName());
+        int update = baseMapper.update(BeanUtil.toBean(requestParam, GroupDO.class), updateWrapper);
+        if (SQLResultHelper.isIllegalDMLResult(update)) {
+            throw new ServiceException("修改失败，请重试");
+        }
     }
 
     /**
