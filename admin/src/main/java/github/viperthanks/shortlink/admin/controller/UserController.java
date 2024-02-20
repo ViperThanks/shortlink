@@ -44,7 +44,7 @@ public class UserController {
     /**
      * 是否存在该用户名
      */
-    @RequestMapping(value = "/api/shortlink/v1/hasUsername/{username}")
+    @RequestMapping(value = "/api/shortlink/v1/has-username/{username}")
     public Result<Boolean> hasUsername(@PathVariable(value = "username") String username) {
         Boolean result = userService.hasUsername(username);
         return Results.success(result);

@@ -31,7 +31,8 @@ public class UserTransmitFilter implements Filter {
      */
     private static final Set<String> WHITE_URLS = Set.of(
             "/api/shortlink/v1/user",
-            "/api/shortlink/v1/user/login"
+            "/api/shortlink/v1/user/login",
+            "/api/shortlink/v1/user/has-username"
     );
 
 
