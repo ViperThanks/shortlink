@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import github.viperthanks.shortlink.admin.common.biz.user.UserContext;
 import github.viperthanks.shortlink.admin.common.convention.exception.ClientException;
 import github.viperthanks.shortlink.admin.common.convention.exception.ServiceException;
 import github.viperthanks.shortlink.admin.dao.entity.GroupDO;
@@ -47,11 +48,12 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
         GroupDO groupDO = GroupDO.builder()
                 .gid(gid)
                 .sortOrder(0)
+                .username(UserContext.getUsername())
                 .name(groupName)
                 .build();
         int effectRow = baseMapper.insert(groupDO);
         if (SQLResultHelper.isIllegalDMLResult(effectRow)) {
-            throw new ServiceException("用户插入失败，请重试");
+            throw new ServiceException("插入失败，请重试");
         }
     }
 
@@ -75,17 +77,27 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
         //todo 获取用户名
         LambdaQueryWrapper<GroupDO> wrapper = Wrappers.lambdaQuery(GroupDO.class)
                 .eq(GroupDO::getDelFlag, 0)
-                .isNull(GroupDO::getUsername)
-                .orderByDesc(Arrays.asList(GroupDO::getSortOrder,GroupDO::getUpdateTime));
+                .eq(GroupDO::getUsername, UserContext.getUsername())
+                .orderByDesc(Arrays.asList(GroupDO::getSortOrder, GroupDO::getUpdateTime));
         List<GroupDO> groupDOList = baseMapper.selectList(wrapper);
         return BeanUtil.copyToList(groupDOList,ShortLinkGroupRespDTO.class);
     }
 
+    /**
+     * 该gid是否存在数据库
+     */
     private boolean isGidExistFromDB(String gid) {
+        return isGidExistFromDB(gid, UserContext.getUsername());
+    }
+
+    /**
+     * 该gid是否存在数据库
+     * note: 因为db存在唯一索引idx_unique_gid_username
+     */
+    private boolean isGidExistFromDB(String gid, String username) {
         LambdaQueryWrapper<GroupDO> wrapper = Wrappers.lambdaQuery(GroupDO.class)
                 .eq(GroupDO::getGid, gid)
-                //todo 这里需要从网关获取用户名称
-                .eq(GroupDO::getUsername, null);
+                .eq(GroupDO::getUsername, username);
         long count = baseMapper.selectCount(wrapper);
         return count > 0;
     }
