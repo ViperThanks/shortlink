@@ -3,6 +3,9 @@ package github.viperthanks.shortlink.admin.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import github.viperthanks.shortlink.admin.dao.entity.GroupDO;
 import github.viperthanks.shortlink.admin.dto.req.ShortLinkGroupSaveReqDTO;
+import github.viperthanks.shortlink.admin.dto.resp.ShortLinkGroupRespDTO;
+
+import java.util.List;
 
 /**
  * desc: 短链接接口层
@@ -26,4 +29,9 @@ public interface GroupService extends IService<GroupDO> {
      * 生成数据库唯一gid
      */
     String generateUniqueGid();
+
+    /**
+     * 获取短链接分组
+     */
+    List<ShortLinkGroupRespDTO> getGroupList();
 }

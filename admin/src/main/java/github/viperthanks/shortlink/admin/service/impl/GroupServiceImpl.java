@@ -1,5 +1,6 @@
 package github.viperthanks.shortlink.admin.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -8,6 +9,7 @@ import github.viperthanks.shortlink.admin.common.convention.exception.ServiceExc
 import github.viperthanks.shortlink.admin.dao.entity.GroupDO;
 import github.viperthanks.shortlink.admin.dao.mapper.GroupMapper;
 import github.viperthanks.shortlink.admin.dto.req.ShortLinkGroupSaveReqDTO;
+import github.viperthanks.shortlink.admin.dto.resp.ShortLinkGroupRespDTO;
 import github.viperthanks.shortlink.admin.service.GroupService;
 import github.viperthanks.shortlink.admin.toolkit.RandomStringGenerator;
 import github.viperthanks.shortlink.admin.toolkit.SQLResultHelper;
@@ -15,6 +17,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * desc: 短链接service实现类
@@ -60,6 +65,20 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
             gid = generateGid();
         } while (isGidExistFromDB(gid));
         return gid;
+    }
+
+    /**
+     * 获取短链接分组
+     */
+    @Override
+    public List<ShortLinkGroupRespDTO> getGroupList() {
+        //todo 获取用户名
+        LambdaQueryWrapper<GroupDO> wrapper = Wrappers.lambdaQuery(GroupDO.class)
+                .eq(GroupDO::getDelFlag, 0)
+                .isNull(GroupDO::getUsername)
+                .orderByDesc(Arrays.asList(GroupDO::getSortOrder,GroupDO::getUpdateTime));
+        List<GroupDO> groupDOList = baseMapper.selectList(wrapper);
+        return BeanUtil.copyToList(groupDOList,ShortLinkGroupRespDTO.class);
     }
 
     private boolean isGidExistFromDB(String gid) {
