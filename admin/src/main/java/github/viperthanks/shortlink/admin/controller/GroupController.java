@@ -3,6 +3,7 @@ package github.viperthanks.shortlink.admin.controller;
 import github.viperthanks.shortlink.admin.common.convention.result.Result;
 import github.viperthanks.shortlink.admin.common.convention.result.Results;
 import github.viperthanks.shortlink.admin.dto.req.ShortLinkGroupSaveReqDTO;
+import github.viperthanks.shortlink.admin.dto.req.ShortLinkGroupSortReqDTO;
 import github.viperthanks.shortlink.admin.dto.req.ShortLinkGroupUpdateReqDTO;
 import github.viperthanks.shortlink.admin.dto.resp.ShortLinkGroupRespDTO;
 import github.viperthanks.shortlink.admin.service.GroupService;
@@ -46,6 +47,15 @@ public class GroupController {
     @RequestMapping(value = "/api/shortlink/v1/group", method = RequestMethod.DELETE)
     public Result<Void> updateGroup(@RequestParam(value = "gid") String gid) {
         groupService.deleteGroup(gid);
+        return Results.success();
+    }
+
+    /**
+     * 短链接分组排序
+     */
+    @RequestMapping(value = "/api/shortlink/v1/group/sort", method = RequestMethod.POST)
+    public Result<Void> groupSort(@RequestBody List<ShortLinkGroupSortReqDTO> requestParam) {
+        groupService.groupSort(requestParam);
         return Results.success();
     }
 

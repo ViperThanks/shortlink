@@ -3,6 +3,7 @@ package github.viperthanks.shortlink.admin.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import github.viperthanks.shortlink.admin.dao.entity.GroupDO;
 import github.viperthanks.shortlink.admin.dto.req.ShortLinkGroupSaveReqDTO;
+import github.viperthanks.shortlink.admin.dto.req.ShortLinkGroupSortReqDTO;
 import github.viperthanks.shortlink.admin.dto.req.ShortLinkGroupUpdateReqDTO;
 import github.viperthanks.shortlink.admin.dto.resp.ShortLinkGroupRespDTO;
 
@@ -42,4 +43,9 @@ public interface GroupService extends IService<GroupDO> {
     void updateGroup(ShortLinkGroupUpdateReqDTO requestParam);
 
     void deleteGroup(String gid);
+
+    /**
+     * 短链接分组排序
+     */
+    void groupSort(List<ShortLinkGroupSortReqDTO> requestParam);
 }

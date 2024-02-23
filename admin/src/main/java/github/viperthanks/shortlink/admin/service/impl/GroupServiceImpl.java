@@ -11,6 +11,7 @@ import github.viperthanks.shortlink.admin.common.convention.exception.ServiceExc
 import github.viperthanks.shortlink.admin.dao.entity.GroupDO;
 import github.viperthanks.shortlink.admin.dao.mapper.GroupMapper;
 import github.viperthanks.shortlink.admin.dto.req.ShortLinkGroupSaveReqDTO;
+import github.viperthanks.shortlink.admin.dto.req.ShortLinkGroupSortReqDTO;
 import github.viperthanks.shortlink.admin.dto.req.ShortLinkGroupUpdateReqDTO;
 import github.viperthanks.shortlink.admin.dto.resp.ShortLinkGroupRespDTO;
 import github.viperthanks.shortlink.admin.service.GroupService;
@@ -59,15 +60,22 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
         }
     }
 
+    private static final int GID_MAX_TRY_LIMIT = 10;
     /**
      * 生成数据库唯一gid
      */
     @Override
     public String generateUniqueGid(){
         String gid;
+
+        int count = 1;
         do {
             gid = generateGid();
+            count++;
         } while (isGidExistFromDB(gid));
+        if (count > GID_MAX_TRY_LIMIT) {
+            log.warn("生成数据库唯一gid循环次数大于10次");
+        }
         return gid;
     }
 
@@ -126,6 +134,23 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
         if (SQLResultHelper.isIllegalDMLResult(update)) {
             throw new ServiceException("删除失败，请重试");
         }
+    }
+
+    /**
+     * 短链接分组排序
+     */
+    @Override
+    public void groupSort(List<ShortLinkGroupSortReqDTO> requestParam) {
+        requestParam.forEach(each ->
+                {
+                    LambdaUpdateWrapper<GroupDO> wrapper = Wrappers.lambdaUpdate(GroupDO.class)
+                            .eq(GroupDO::getUsername, UserContext.getUsername())
+                            .eq(GroupDO::getDelFlag, 0)
+                            .eq(GroupDO::getGid, each.getGid())
+                            .set(GroupDO::getSortOrder, each.getSortOrder());
+                    this.update(wrapper);
+                }
+        );
     }
 
     /**
