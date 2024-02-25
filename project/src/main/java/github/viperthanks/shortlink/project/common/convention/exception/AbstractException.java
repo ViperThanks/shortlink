@@ -7,7 +7,8 @@ package github.viperthanks.shortlink.project.common.convention.exception;
  * @since 15/2/2024
  */
 
-import github.viperthanks.shortlink.admin.common.convention.errorcode.IErrorCode;
+
+import github.viperthanks.shortlink.project.common.convention.errorcode.IErrorCode;
 import lombok.Getter;
 
 import java.util.Objects;

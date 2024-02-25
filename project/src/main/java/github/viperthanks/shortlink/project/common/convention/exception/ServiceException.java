@@ -1,8 +1,8 @@
 package github.viperthanks.shortlink.project.common.convention.exception;
 
 
-import github.viperthanks.shortlink.admin.common.convention.errorcode.BaseErrorCode;
-import github.viperthanks.shortlink.admin.common.convention.errorcode.IErrorCode;
+import github.viperthanks.shortlink.project.common.convention.errorcode.BaseErrorCode;
+import github.viperthanks.shortlink.project.common.convention.errorcode.IErrorCode;
 
 import java.util.Objects;
 

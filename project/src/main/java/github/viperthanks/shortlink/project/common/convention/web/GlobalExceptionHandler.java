@@ -1,10 +1,10 @@
 package github.viperthanks.shortlink.project.common.convention.web;
 
 
-import github.viperthanks.shortlink.admin.common.convention.errorcode.BaseErrorCode;
-import github.viperthanks.shortlink.admin.common.convention.exception.AbstractException;
-import github.viperthanks.shortlink.admin.common.convention.result.Result;
-import github.viperthanks.shortlink.admin.common.convention.result.Results;
+import github.viperthanks.shortlink.project.common.convention.errorcode.BaseErrorCode;
+import github.viperthanks.shortlink.project.common.convention.exception.AbstractException;
+import github.viperthanks.shortlink.project.common.convention.result.Result;
+import github.viperthanks.shortlink.project.common.convention.result.Results;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
