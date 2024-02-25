@@ -2,7 +2,7 @@ package github.viperthanks.shortlink.project.dao.entity;
 
 
 import com.baomidou.mybatisplus.annotation.TableName;
-import github.viperthanks.shortlink.project.common.convention.database.BaseDO;
+import github.viperthanks.shortlink.project.common.database.BaseDO;
 import lombok.*;
 
 import java.util.Date;
