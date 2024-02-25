@@ -26,7 +26,7 @@ public class GroupController {
     /**
      * 新增短链接分组
      */
-    @RequestMapping(value = "/api/shortlink/v1/group", method = RequestMethod.POST)
+    @RequestMapping(value = "/api/shortlink/admin/v1/group", method = RequestMethod.POST)
     public Result<Void> saveGroup(@RequestBody ShortLinkGroupSaveReqDTO requestParam) {
         groupService.saveGroup(requestParam);
         return Results.success();
@@ -35,7 +35,7 @@ public class GroupController {
     /**
      * 修改短链接分组
      */
-    @RequestMapping(value = "/api/shortlink/v1/group", method = RequestMethod.PUT)
+    @RequestMapping(value = "/api/shortlink/admin/v1/group", method = RequestMethod.PUT)
     public Result<Void> updateGroup(@RequestBody ShortLinkGroupUpdateReqDTO requestParam) {
         groupService.updateGroup(requestParam);
         return Results.success();
@@ -44,7 +44,7 @@ public class GroupController {
     /**
      * 删除短链接分组
      */
-    @RequestMapping(value = "/api/shortlink/v1/group", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/api/shortlink/admin/v1/group", method = RequestMethod.DELETE)
     public Result<Void> updateGroup(@RequestParam(value = "gid") String gid) {
         groupService.deleteGroup(gid);
         return Results.success();
@@ -53,7 +53,7 @@ public class GroupController {
     /**
      * 短链接分组排序
      */
-    @RequestMapping(value = "/api/shortlink/v1/group/sort", method = RequestMethod.POST)
+    @RequestMapping(value = "/api/shortlink/admin/v1/group/sort", method = RequestMethod.POST)
     public Result<Void> groupSort(@RequestBody List<ShortLinkGroupSortReqDTO> requestParam) {
         groupService.groupSort(requestParam);
         return Results.success();
@@ -63,7 +63,7 @@ public class GroupController {
     /**
      * 查询短链接分组
      */
-    @RequestMapping(value = "/api/shortlink/v1/group", method = RequestMethod.GET)
+    @RequestMapping(value = "/api/shortlink/admin/v1/group", method = RequestMethod.GET)
     public Result<List<ShortLinkGroupRespDTO>> getGroupList() {
         return Results.success(groupService.getGroupList());
     }
