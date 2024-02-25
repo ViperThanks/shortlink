@@ -1,4 +1,4 @@
-package github.viperthanks.shortlink.admin.common.convention.database;
+package github.viperthanks.shortlink.admin.common.database;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
