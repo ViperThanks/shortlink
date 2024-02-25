@@ -9,5 +9,6 @@ import github.viperthanks.shortlink.project.dao.entity.ShortLinkDO;
  * @author Viper Thanks
  * @since 25/2/2024
  */
+
 public interface ShortLinkService extends IService<ShortLinkDO> {
 }
