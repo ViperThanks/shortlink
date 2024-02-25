@@ -1,6 +1,7 @@
 package github.viperthanks.shortlink.project.dao.entity;
 
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import github.viperthanks.shortlink.project.common.database.BaseDO;
 import lombok.*;
@@ -74,6 +75,7 @@ public class ShortLinkDO extends BaseDO {
     /**
      * 描述
      */
+    @TableField(value = "`describe`")
     private String describe;
 
 }
