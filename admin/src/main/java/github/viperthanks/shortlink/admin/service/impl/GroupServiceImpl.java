@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import github.viperthanks.shortlink.admin.common.biz.user.UserContext;
 import github.viperthanks.shortlink.admin.common.convention.exception.ClientException;
 import github.viperthanks.shortlink.admin.common.convention.exception.ServiceException;
@@ -13,7 +15,9 @@ import github.viperthanks.shortlink.admin.dao.mapper.GroupMapper;
 import github.viperthanks.shortlink.admin.dto.req.ShortLinkGroupSaveReqDTO;
 import github.viperthanks.shortlink.admin.dto.req.ShortLinkGroupSortReqDTO;
 import github.viperthanks.shortlink.admin.dto.req.ShortLinkGroupUpdateReqDTO;
+import github.viperthanks.shortlink.admin.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import github.viperthanks.shortlink.admin.dto.resp.ShortLinkGroupRespDTO;
+import github.viperthanks.shortlink.admin.remote.dto.ShortLinkRemoteService;
 import github.viperthanks.shortlink.admin.service.GroupService;
 import github.viperthanks.shortlink.admin.toolkit.RandomStringGenerator;
 import github.viperthanks.shortlink.admin.toolkit.SQLResultHelper;
@@ -23,7 +27,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * desc: 短链接service实现类
@@ -35,6 +41,8 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implements GroupService {
+
+    private final ShortLinkRemoteService shortLinkRemoteService;
     /**
      * 默认的gid长度
      */
@@ -84,13 +92,20 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
      */
     @Override
     public List<ShortLinkGroupRespDTO> getGroupList() {
-        //todo 获取用户名
         LambdaQueryWrapper<GroupDO> wrapper = Wrappers.lambdaQuery(GroupDO.class)
                 .eq(GroupDO::getDelFlag, 0)
                 .eq(GroupDO::getUsername, UserContext.getUsername())
                 .orderByDesc(Arrays.asList(GroupDO::getSortOrder, GroupDO::getUpdateTime));
         List<GroupDO> groupDOList = baseMapper.selectList(wrapper);
-        return BeanUtil.copyToList(groupDOList,ShortLinkGroupRespDTO.class);
+        List<ShortLinkGroupCountQueryRespDTO> list = shortLinkRemoteService.listGroupShortLinkCount(Lists.transform(groupDOList, GroupDO::getGid)).getData();
+        HashMap<String, Integer> gidCountMap = list.stream()
+                .collect(Collectors.toMap(ShortLinkGroupCountQueryRespDTO::getGid,
+                        ShortLinkGroupCountQueryRespDTO::getShortLinkCount,
+                        Integer::sum,
+                        () -> Maps.newHashMapWithExpectedSize(list.size())));
+        return BeanUtil.copyToList(groupDOList, ShortLinkGroupRespDTO.class).stream()
+                .peek(each -> each.setShortLinkCount(gidCountMap.getOrDefault(each.getGid(), 0)))
+                .toList();
     }
 
     /**
