@@ -2,16 +2,16 @@ package github.viperthanks.shortlink.admin.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import github.viperthanks.shortlink.admin.common.convention.result.Result;
+import github.viperthanks.shortlink.admin.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import github.viperthanks.shortlink.admin.remote.dto.ShortLinkRemoteService;
 import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkCreateReqDTO;
 import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkPageReqDTO;
 import github.viperthanks.shortlink.admin.remote.dto.resp.ShortLinkCreateRespDTO;
 import github.viperthanks.shortlink.admin.remote.dto.resp.ShortLinkPageRespDTO;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * desc:
@@ -39,5 +39,13 @@ public class ShortLinkController {
     @RequestMapping(value = "/api/shortlink/admin/v1/page", method = RequestMethod.GET)
     public Result<IPage<ShortLinkPageRespDTO>> pageShortLink(ShortLinkPageReqDTO requestParam) {
         return shortLinkRemoteService.pageShortLink(requestParam);
+    }
+
+    /**
+     * 查询短链接分组内数量
+     */
+    @RequestMapping(value = "/api/shortlink/admin/v1/count", method = RequestMethod.GET)
+    public Result<List<ShortLinkGroupCountQueryRespDTO>> listGroupShortLinkCount(@RequestParam("gidList") List<String> gidList) {
+        return shortLinkRemoteService.listGroupShortLinkCount(gidList);
     }
 }

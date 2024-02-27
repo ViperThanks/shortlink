@@ -6,10 +6,13 @@ import github.viperthanks.shortlink.project.common.convention.result.Results;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkCreateReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkPageReqDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkCreateRespDTO;
+import github.viperthanks.shortlink.project.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkPageRespDTO;
 import github.viperthanks.shortlink.project.service.ShortLinkService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * desc:短链接控制车
@@ -36,5 +39,13 @@ public class ShortLinkController {
     @RequestMapping(value = "/api/shortlink/v1/page", method = RequestMethod.GET)
     public Result<IPage<ShortLinkPageRespDTO>> pageShortLink(ShortLinkPageReqDTO requestParam) {
         return Results.success(shortLinkService.pageShortLink(requestParam));
+    }
+
+    /**
+     * 查询短链接分组内数量
+     */
+    @RequestMapping(value = "/api/shortlink/v1/count", method = RequestMethod.GET)
+    public Result<List<ShortLinkGroupCountQueryRespDTO>> listGroupShortLinkCount(@RequestParam("gidList") List<String> gidList) {
+        return Results.success(shortLinkService.listGroupShortLinkCount(gidList));
     }
 }

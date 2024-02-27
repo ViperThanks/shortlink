@@ -6,7 +6,10 @@ import github.viperthanks.shortlink.project.dao.entity.ShortLinkDO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkCreateReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkPageReqDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkCreateRespDTO;
+import github.viperthanks.shortlink.project.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkPageRespDTO;
+
+import java.util.List;
 
 /**
  * desc: 链接业务接口层
@@ -26,4 +29,9 @@ public interface ShortLinkService extends IService<ShortLinkDO> {
      * @param requestParam 分页短链接请求参数
      */
     IPage<ShortLinkPageRespDTO> pageShortLink(ShortLinkPageReqDTO requestParam);
+
+    /**
+     * 通过gid list获取他的分组内数量
+     */
+    List<ShortLinkGroupCountQueryRespDTO> listGroupShortLinkCount(List<String> gidList);
 }

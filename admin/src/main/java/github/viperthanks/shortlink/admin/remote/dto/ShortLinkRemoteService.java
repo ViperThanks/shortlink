@@ -6,11 +6,13 @@ import com.alibaba.fastjson2.TypeReference;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.google.common.collect.ImmutableMap;
 import github.viperthanks.shortlink.admin.common.convention.result.Result;
+import github.viperthanks.shortlink.admin.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkCreateReqDTO;
 import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkPageReqDTO;
 import github.viperthanks.shortlink.admin.remote.dto.resp.ShortLinkCreateRespDTO;
 import github.viperthanks.shortlink.admin.remote.dto.resp.ShortLinkPageRespDTO;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -42,4 +44,13 @@ public interface ShortLinkRemoteService {
         String responseBody = HttpUtil.get("http://127.0.0.1:8001/api/shortlink/v1/page", requestParamMap);
         return JSON.parseObject(responseBody, new TypeReference<>() {});
     }
+
+    default Result<List<ShortLinkGroupCountQueryRespDTO>> listGroupShortLinkCount(List<String> gidList){
+        Map<String, Object> requestParamMap = ImmutableMap.of(
+                "gidList", gidList
+        );
+        String responseBody = HttpUtil.get("http://127.0.0.1:8001/api/shortlink/v1/count", requestParamMap);
+        return JSON.parseObject(responseBody, new TypeReference<>() {});
+    }
+
 }
