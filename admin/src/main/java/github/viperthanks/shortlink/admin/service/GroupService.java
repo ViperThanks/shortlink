@@ -30,7 +30,7 @@ public interface GroupService extends IService<GroupDO> {
     /**
      * 生成数据库唯一gid
      */
-    String generateUniqueGid();
+    String generateUniqueGid(String username);
 
     /**
      * 获取短链接分组

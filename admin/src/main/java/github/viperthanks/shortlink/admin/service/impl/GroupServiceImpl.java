@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -50,16 +51,24 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
     @Override
     public void saveGroup(ShortLinkGroupSaveReqDTO requestParam) {
         String groupName = requestParam.getName();
+        String username;
+        try {
+            username = Objects.requireNonNullElse(requestParam.getUsername(), UserContext.getUsername());
+        }
+        catch (NullPointerException e) {
+            //这里得两个username都是null才会报这个异常
+            throw new ClientException("用户尚未登录");
+        }
         //这里要做拓展
         if (StringUtils.length(groupName) == 0) {
             throw new ClientException("短链接名不能为空白");
         }
-        String gid = generateUniqueGid();
+        String gid = generateUniqueGid(username);
         //构造GroupDO
         GroupDO groupDO = GroupDO.builder()
                 .gid(gid)
                 .sortOrder(0)
-                .username(UserContext.getUsername())
+                .username(username)
                 .name(groupName)
                 .build();
         int effectRow = baseMapper.insert(groupDO);
@@ -73,14 +82,14 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
      * 生成数据库唯一gid
      */
     @Override
-    public String generateUniqueGid(){
+    public String generateUniqueGid(String username){
         String gid;
 
         int count = 1;
         do {
             gid = generateGid();
             count++;
-        } while (isGidExistFromDB(gid));
+        } while (isGidExistFromDB(gid, username));
         if (count > GID_MAX_TRY_LIMIT) {
             log.warn("生成数据库唯一gid循环次数大于10次");
         }
