@@ -1,5 +1,7 @@
 package github.viperthanks.shortlink.project.dto.req;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import github.viperthanks.shortlink.project.common.constant.JsonConstants;
 import lombok.Data;
 
 import java.util.Date;
@@ -40,6 +42,7 @@ public class ShortLinkCreateReqDTO {
     /**
      * 有效期
      */
+    @JsonFormat(pattern = JsonConstants.DEFAULT_PATTERN, timezone = JsonConstants.DEFAULT_TIMEZONE)
     private Date validDate;
 
     /**
