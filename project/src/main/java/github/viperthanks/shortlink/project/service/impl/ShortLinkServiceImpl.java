@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import github.viperthanks.shortlink.project.common.constant.RedisKeyConstant;
 import github.viperthanks.shortlink.project.common.convention.exception.ClientException;
 import github.viperthanks.shortlink.project.common.convention.exception.ServiceException;
 import github.viperthanks.shortlink.project.common.database.BaseDO;
@@ -31,7 +32,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.redisson.api.RBloomFilter;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -51,6 +55,8 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 
     private final RBloomFilter<String> shortUriCreateCachePenetrationBloomFilter;
     private final ShortLinkGotoMapper shortLinkGotoMapper;
+    private final StringRedisTemplate stringRedisTemplate;
+    private final RedissonClient redissonClient;
     @Override
     public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
         String shortLinkSuffix = generateSuffix(requestParam);
@@ -159,26 +165,54 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     public void restoreUrl(String uri, HttpServletRequest request, HttpServletResponse response) {
         String serverName = request.getServerName();
         final String fullShortUrl = serverName + '/' + uri;
-        LambdaQueryWrapper<ShortLinkGotoDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkGotoDO.class)
-                .eq(ShortLinkGotoDO::getFullShortUrl, fullShortUrl);
-        ShortLinkGotoDO hasShortLinkGotoDO = shortLinkGotoMapper.selectOne(queryWrapper);
-        if (null == hasShortLinkGotoDO) {
-            //此处需要做风控
-            return;
+        String originalLink = stringRedisTemplate.opsForValue().get(RedisKeyConstant.GOTO_SHORTLINK_KEY.formatted(fullShortUrl));
+        if (StringUtils.isNotBlank(originalLink)) {
+            sendRedirect(response, originalLink);
         }
-        LambdaQueryWrapper<ShortLinkDO> shortLinkQueryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
-                .eq(ShortLinkDO::getFullShortUrl, fullShortUrl)
-                .eq(ShortLinkDO::getGid, hasShortLinkGotoDO.getGid())
-                .eq(BaseDO::getDelFlag, 0)
-                .eq(ShortLinkDO::getEnableStatus, 0);
-        ShortLinkDO shortLinkDO = baseMapper.selectOne(shortLinkQueryWrapper);
-        if (null == shortLinkDO) {
-            return;
+        //不命中缓存，重启缓存时开启分布式锁，这里做悲观逻辑
+        RLock lock = redissonClient.getLock(RedisKeyConstant.LOCK_GOTO_SHORTLINK_KEY.formatted(fullShortUrl));
+        try {
+            lock.lock();
+            originalLink = stringRedisTemplate.opsForValue().get(RedisKeyConstant.GOTO_SHORTLINK_KEY.formatted(fullShortUrl));
+            if (StringUtils.isNotBlank(originalLink)) {
+                sendRedirect(response, originalLink);
+                return;
+            }
+            LambdaQueryWrapper<ShortLinkGotoDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkGotoDO.class)
+                    .eq(ShortLinkGotoDO::getFullShortUrl, fullShortUrl);
+            ShortLinkGotoDO hasShortLinkGotoDO = shortLinkGotoMapper.selectOne(queryWrapper);
+            if (null == hasShortLinkGotoDO) {
+                //此处需要做风控
+                log.error("根据fullShortUrl ： {} 无法获取 hasShortLinkGotoDO , uri : {} , ip : {}", fullShortUrl, uri, request.getRemoteAddr());
+                return;
+            }
+            LambdaQueryWrapper<ShortLinkDO> shortLinkQueryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
+                    .eq(ShortLinkDO::getFullShortUrl, fullShortUrl)
+                    .eq(ShortLinkDO::getGid, hasShortLinkGotoDO.getGid())
+                    .eq(BaseDO::getDelFlag, 0)
+                    .eq(ShortLinkDO::getEnableStatus, 0);
+            ShortLinkDO shortLinkDO = baseMapper.selectOne(shortLinkQueryWrapper);
+            if (null == shortLinkDO) {
+                return;
+            }
+            stringRedisTemplate.opsForValue().set(RedisKeyConstant.GOTO_SHORTLINK_KEY.formatted(fullShortUrl), shortLinkDO.getOriginUrl());
+            sendRedirect(response, shortLinkDO.getOriginUrl());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }finally {
+            lock.unlock();
         }
+    }
+
+    /**
+     * 发送重定向链接
+     */
+    private void sendRedirect(HttpServletResponse response, final String url) {
         try {
             response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
-            response.sendRedirect(shortLinkDO.getOriginUrl());
+            response.sendRedirect(url);
         } catch (IOException e) {
+            log.error("重定向时发生IO异常", e);
             throw new ServiceException("服务器异常，请重新刷新");
         }
     }
