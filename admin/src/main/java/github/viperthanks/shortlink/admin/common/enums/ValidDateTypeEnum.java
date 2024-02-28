@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonValue;
-import github.viperthanks.shortlink.project.toolkit.EnumUtil;
+import github.viperthanks.shortlink.admin.toolkit.EnumUtil;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
