@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import github.viperthanks.shortlink.project.dao.entity.ShortLinkDO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkCreateReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkPageReqDTO;
+import github.viperthanks.shortlink.project.dto.req.ShortLinkUpdateReqDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkCreateRespDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkPageRespDTO;
@@ -34,4 +35,9 @@ public interface ShortLinkService extends IService<ShortLinkDO> {
      * 通过gid list获取他的分组内数量
      */
     List<ShortLinkGroupCountQueryRespDTO> listGroupShortLinkCount(List<String> gidList);
+
+    /**
+     * 更新短链接
+     */
+    void updateShortLink(ShortLinkUpdateReqDTO requestParam);
 }

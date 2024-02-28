@@ -3,15 +3,18 @@ package github.viperthanks.shortlink.project.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import github.viperthanks.shortlink.project.common.convention.exception.ClientException;
 import github.viperthanks.shortlink.project.common.convention.exception.ServiceException;
+import github.viperthanks.shortlink.project.common.enums.ValidDateTypeEnum;
 import github.viperthanks.shortlink.project.dao.entity.ShortLinkDO;
 import github.viperthanks.shortlink.project.dao.mapper.ShortLinkMapper;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkCreateReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkPageReqDTO;
+import github.viperthanks.shortlink.project.dto.req.ShortLinkUpdateReqDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkCreateRespDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkPageRespDTO;
@@ -110,6 +113,24 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .groupBy("gid");
         List<Map<String, Object>> resultDoList = baseMapper.selectMaps(wrapper);
         return BeanUtil.copyToList(resultDoList, ShortLinkGroupCountQueryRespDTO.class);
+    }
+
+    /**
+     * 更新短链接
+     *
+     */
+    @Override
+    public void updateShortLink(ShortLinkUpdateReqDTO requestParam) {
+        LambdaUpdateWrapper<ShortLinkDO> updateWrapper = Wrappers.lambdaUpdate(entityClass)
+                .eq(ShortLinkDO::getFullShortUrl, requestParam.getFullShortUrl())
+                .eq(ShortLinkDO::getGid, requestParam.getGid())
+                .eq(ShortLinkDO::getDelFlag, 0)
+                .eq(ShortLinkDO::getEnableStatus, 0)
+                .set(ShortLinkDO::getValidDateType, requestParam.getValidDateType())
+                .set(requestParam.getValidDateType() == ValidDateTypeEnum.PERMANENT, ShortLinkDO::getValidDate, null)
+                .set(ShortLinkDO::getDescribe, requestParam.getDescribe())
+                .set(ShortLinkDO::getOriginUrl, requestParam.getOriginUrl());
+        this.update(updateWrapper);
     }
 
     private String generateSuffix(ShortLinkCreateReqDTO requestParam) {
