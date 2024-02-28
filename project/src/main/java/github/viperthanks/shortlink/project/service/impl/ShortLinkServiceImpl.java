@@ -54,6 +54,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
         String shortLinkSuffix = generateSuffix(requestParam);
         String fullShortUrl = requestParam.getDomain() + "/" + shortLinkSuffix;
+        String fullShortUrlWithProtocol = requestParam.getDomainProtocol() + fullShortUrl;
         ShortLinkDO shortLinkDO = ShortLinkDO.builder()
                 .domain(requestParam.getDomain())
                 .originUrl(requestParam.getOriginUrl())
@@ -91,7 +92,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         return ShortLinkCreateRespDTO.builder()
                 .gid(shortLinkDO.getGid())
                 .originUrl(shortLinkDO.getOriginUrl())
-                .fullShortUrl(shortLinkDO.getFullShortUrl())
+                .fullShortUrl(fullShortUrlWithProtocol)
                 .build();
     }
 
