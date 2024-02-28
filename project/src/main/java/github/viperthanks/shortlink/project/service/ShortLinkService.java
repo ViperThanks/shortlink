@@ -9,6 +9,8 @@ import github.viperthanks.shortlink.project.dto.req.ShortLinkUpdateReqDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkCreateRespDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkPageRespDTO;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.List;
 
@@ -40,4 +42,10 @@ public interface ShortLinkService extends IService<ShortLinkDO> {
      * 更新短链接
      */
     void updateShortLink(ShortLinkUpdateReqDTO requestParam);
+
+    /**
+     * 跳转短链接
+
+     */
+    void restoreUrl(String requestParam, HttpServletRequest request, HttpServletResponse response);
 }

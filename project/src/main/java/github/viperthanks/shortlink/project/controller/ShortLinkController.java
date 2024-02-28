@@ -10,6 +10,8 @@ import github.viperthanks.shortlink.project.dto.resp.ShortLinkCreateRespDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkPageRespDTO;
 import github.viperthanks.shortlink.project.service.ShortLinkService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,6 +27,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ShortLinkController {
     private final ShortLinkService shortLinkService;
+
+    @RequestMapping(value = "/{shortlink-uri}", method = RequestMethod.GET)
+    public void restoreUrl(@PathVariable("shortlink-uri") String requestParam,
+                           HttpServletRequest request, HttpServletResponse response) {
+        shortLinkService.restoreUrl(requestParam, request, response);
+    }
 
     /**
      * 短链接创建
