@@ -9,6 +9,7 @@ import github.viperthanks.shortlink.admin.common.convention.result.Result;
 import github.viperthanks.shortlink.admin.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkCreateReqDTO;
 import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkPageReqDTO;
+import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkUpdateReqDTO;
 import github.viperthanks.shortlink.admin.remote.dto.resp.ShortLinkCreateRespDTO;
 import github.viperthanks.shortlink.admin.remote.dto.resp.ShortLinkPageRespDTO;
 
@@ -53,4 +54,7 @@ public interface ShortLinkRemoteService {
         return JSON.parseObject(responseBody, new TypeReference<>() {});
     }
 
+    default void updateShortLink(ShortLinkUpdateReqDTO requestParam) {
+        HttpUtil.post("http://127.0.0.1:8001/api/shortlink/v1/create", JSON.toJSONString(requestParam));
+    }
 }

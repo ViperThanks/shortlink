@@ -2,10 +2,12 @@ package github.viperthanks.shortlink.admin.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import github.viperthanks.shortlink.admin.common.convention.result.Result;
+import github.viperthanks.shortlink.admin.common.convention.result.Results;
 import github.viperthanks.shortlink.admin.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import github.viperthanks.shortlink.admin.remote.dto.ShortLinkRemoteService;
 import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkCreateReqDTO;
 import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkPageReqDTO;
+import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkUpdateReqDTO;
 import github.viperthanks.shortlink.admin.remote.dto.resp.ShortLinkCreateRespDTO;
 import github.viperthanks.shortlink.admin.remote.dto.resp.ShortLinkPageRespDTO;
 import lombok.RequiredArgsConstructor;
@@ -47,5 +49,14 @@ public class ShortLinkController {
     @RequestMapping(value = "/api/shortlink/admin/v1/count", method = RequestMethod.GET)
     public Result<List<ShortLinkGroupCountQueryRespDTO>> listGroupShortLinkCount(@RequestParam("gidList") List<String> gidList) {
         return shortLinkRemoteService.listGroupShortLinkCount(gidList);
+    }
+
+    /**
+     * 修改短链接
+     */
+    @RequestMapping(value = "/api/shortlink/admin/v1/update", method = RequestMethod.PUT)
+    public Result<Void> updateShortLink(@RequestBody ShortLinkUpdateReqDTO requestParam) {
+        shortLinkRemoteService.updateShortLink(requestParam);
+        return Results.success();
     }
 }
