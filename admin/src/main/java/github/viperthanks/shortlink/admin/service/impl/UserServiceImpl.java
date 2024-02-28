@@ -17,6 +17,7 @@ import github.viperthanks.shortlink.admin.dao.mapper.UserMapper;
 import github.viperthanks.shortlink.admin.dto.req.*;
 import github.viperthanks.shortlink.admin.dto.resp.UserLoginRespDTO;
 import github.viperthanks.shortlink.admin.dto.resp.UserRespDTO;
+import github.viperthanks.shortlink.admin.service.GroupService;
 import github.viperthanks.shortlink.admin.service.UserService;
 import github.viperthanks.shortlink.admin.toolkit.SQLResultHelper;
 import jakarta.annotation.Nonnull;
@@ -52,6 +53,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     private final RedissonClient redissonClient;
 
     private final StringRedisTemplate stringRedisTemplate;
+
+    private final GroupService groupService;
     @Override
 
     public UserRespDTO getUserByUsername(final String username) {
@@ -95,6 +98,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                 throw new ServiceException(UserErrorCodeEnum.USER_SAVE_ERROR);
             }
             userRegisterCachePenetrationBloomFilter.add(requestParam.getUsername());
+            groupService.saveGroup(ShortLinkGroupSaveReqDTO.builder()
+                    .username(requestParam.getUsername())
+                    .name("默认分组")
+                    .build()
+            );
         } catch (DuplicateKeyException ex) {
             throw new ClientException("用户名重复");
         } finally {
