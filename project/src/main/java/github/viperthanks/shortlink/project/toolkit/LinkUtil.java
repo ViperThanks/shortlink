@@ -4,9 +4,9 @@ import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 
 import java.util.Date;
-import java.util.Optional;
 
 import static github.viperthanks.shortlink.project.common.constant.ShortLinkConstant.DEFAULT_CACHE_EXPIRE_TIME;
+import static github.viperthanks.shortlink.project.common.constant.ShortLinkConstant.MAX_CACHE_EXPIRE_TIME;
 
 /**
  * desc: 短链接工具类
@@ -16,11 +16,15 @@ import static github.viperthanks.shortlink.project.common.constant.ShortLinkCons
  */
 public class LinkUtil {
     /**
-     * 获取短链接有效时间
+     * 获取短链接有效时间，返回时间戳
+     * 如果超过当前时间返回-1
      */
     public static long getLinkCacheValidDate(Date validate) {
-        return Optional.ofNullable(validate)
-                .map(each -> DateUtil.between(new Date(), validate, DateUnit.MS))
-                .orElse(DEFAULT_CACHE_EXPIRE_TIME);
+        if (null == validate) {
+            return DEFAULT_CACHE_EXPIRE_TIME;
+        }
+        long res;
+        return (res = DateUtil.between(new Date(), validate, DateUnit.MS, false)) > 0 ? Math.min(res, MAX_CACHE_EXPIRE_TIME) : -1L;
     }
+
 }

@@ -99,11 +99,14 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         if (SQLResultHelper.isIllegalDMLResult(effectRow)) {
             throw new ServiceException("新增失败，请重试");
         }
-        stringRedisTemplate.opsForValue().set(
-                RedisKeyConstant.GOTO_SHORTLINK_KEY.formatted(fullShortUrl),
-                requestParam.getOriginUrl(),
-                LinkUtil.getLinkCacheValidDate(shortLinkDO.getValidDate()),
-                TimeUnit.MILLISECONDS);
+        long linkCacheValidDate = LinkUtil.getLinkCacheValidDate(shortLinkDO.getValidDate());
+        if (linkCacheValidDate > 0) {
+            stringRedisTemplate.opsForValue().set(
+                    RedisKeyConstant.GOTO_SHORTLINK_KEY.formatted(fullShortUrl),
+                    requestParam.getOriginUrl(),
+                    linkCacheValidDate,
+                    TimeUnit.MILLISECONDS);
+        }
         shortUriCreateCachePenetrationBloomFilter.add(fullShortUrl);
         return ShortLinkCreateRespDTO.builder()
                 .gid(shortLinkDO.getGid())
@@ -219,7 +222,16 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 stringRedisTemplate.opsForValue().set(RedisKeyConstant.GOTO_SHORTLINK_IS_NULL_KEY.formatted(fullShortUrl), "-", DEFAULT_IS_NULL_DURATION);
                 return;
             }
-            stringRedisTemplate.opsForValue().set(RedisKeyConstant.GOTO_SHORTLINK_KEY.formatted(fullShortUrl), shortLinkDO.getOriginUrl());
+            long linkCacheValidDate = LinkUtil.getLinkCacheValidDate(shortLinkDO.getValidDate());
+            if (linkCacheValidDate == -1L) {
+                stringRedisTemplate.opsForValue().set(RedisKeyConstant.GOTO_SHORTLINK_IS_NULL_KEY.formatted(fullShortUrl), "-", DEFAULT_IS_NULL_DURATION);
+                return;
+            }
+            stringRedisTemplate.opsForValue().set(
+                    RedisKeyConstant.GOTO_SHORTLINK_KEY.formatted(fullShortUrl),
+                    shortLinkDO.getOriginUrl(),
+                    linkCacheValidDate,
+                    TimeUnit.MILLISECONDS);
             sendRedirect(response, shortLinkDO.getOriginUrl());
         } catch (Exception e) {
             throw new RuntimeException(e);
