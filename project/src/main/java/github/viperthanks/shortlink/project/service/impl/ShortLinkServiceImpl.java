@@ -24,6 +24,7 @@ import github.viperthanks.shortlink.project.dto.resp.ShortLinkGroupCountQueryRes
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkPageRespDTO;
 import github.viperthanks.shortlink.project.service.ShortLinkService;
 import github.viperthanks.shortlink.project.toolkit.HashUtil;
+import github.viperthanks.shortlink.project.toolkit.LinkUtil;
 import github.viperthanks.shortlink.project.toolkit.SQLResultHelper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -41,6 +42,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static github.viperthanks.shortlink.project.common.constant.RedisConstant.DEFAULT_IS_NULL_DURATION;
 
@@ -97,6 +99,11 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         if (SQLResultHelper.isIllegalDMLResult(effectRow)) {
             throw new ServiceException("新增失败，请重试");
         }
+        stringRedisTemplate.opsForValue().set(
+                RedisKeyConstant.GOTO_SHORTLINK_KEY.formatted(fullShortUrl),
+                requestParam.getOriginUrl(),
+                LinkUtil.getLinkCacheValidDate(shortLinkDO.getValidDate()),
+                TimeUnit.MILLISECONDS);
         shortUriCreateCachePenetrationBloomFilter.add(fullShortUrl);
         return ShortLinkCreateRespDTO.builder()
                 .gid(shortLinkDO.getGid())
