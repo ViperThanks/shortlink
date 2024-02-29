@@ -42,6 +42,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import static github.viperthanks.shortlink.project.common.constant.RedisConstant.DEFAULT_IS_NULL_DURATION;
+
 /**
  * desc: 链接业务实现层
  *
@@ -160,6 +162,10 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 
     /**
      * 跳转短链接
+     * advanced：缓存穿透实现 ， 先判断redis是否存在，不存在则访问布隆过滤器，如果布隆过滤器不存在（布隆过滤器不存在不会有误判）。
+     * 如果布隆过滤器存在，则看看缓存空值的key是否存在，如果存在，说明之前穿透过，直接return
+     * 如果缓存空值的key不存在，则访问数据库
+     * advanced：缓存击穿的实现，如果判断没有命中缓存，在缓存重建的过程中做分布式锁，并且基于双锁实现优化
      */
     @Override
     public void restoreUrl(String uri, HttpServletRequest request, HttpServletResponse response) {
@@ -168,6 +174,15 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         String originalLink = stringRedisTemplate.opsForValue().get(RedisKeyConstant.GOTO_SHORTLINK_KEY.formatted(fullShortUrl));
         if (StringUtils.isNotBlank(originalLink)) {
             sendRedirect(response, originalLink);
+        }
+        //看看布隆过滤器有没有
+        boolean contains = shortUriCreateCachePenetrationBloomFilter.contains(fullShortUrl);
+        if (!contains) {
+            return;
+        }
+        String isNull = stringRedisTemplate.opsForValue().get(RedisKeyConstant.GOTO_SHORTLINK_IS_NULL_KEY.formatted(fullShortUrl));
+        if (StringUtils.isNotBlank(isNull)) {
+            return;
         }
         //不命中缓存，重启缓存时开启分布式锁，这里做悲观逻辑
         RLock lock = redissonClient.getLock(RedisKeyConstant.LOCK_GOTO_SHORTLINK_KEY.formatted(fullShortUrl));
@@ -182,7 +197,8 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .eq(ShortLinkGotoDO::getFullShortUrl, fullShortUrl);
             ShortLinkGotoDO hasShortLinkGotoDO = shortLinkGotoMapper.selectOne(queryWrapper);
             if (null == hasShortLinkGotoDO) {
-                //此处需要做风控
+                //缓存穿透的实现
+                stringRedisTemplate.opsForValue().set(RedisKeyConstant.GOTO_SHORTLINK_IS_NULL_KEY.formatted(fullShortUrl), "-", DEFAULT_IS_NULL_DURATION);
                 log.error("根据fullShortUrl ： {} 无法获取 hasShortLinkGotoDO , uri : {} , ip : {}", fullShortUrl, uri, request.getRemoteAddr());
                 return;
             }
@@ -193,6 +209,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .eq(ShortLinkDO::getEnableStatus, 0);
             ShortLinkDO shortLinkDO = baseMapper.selectOne(shortLinkQueryWrapper);
             if (null == shortLinkDO) {
+                stringRedisTemplate.opsForValue().set(RedisKeyConstant.GOTO_SHORTLINK_IS_NULL_KEY.formatted(fullShortUrl), "-", DEFAULT_IS_NULL_DURATION);
                 return;
             }
             stringRedisTemplate.opsForValue().set(RedisKeyConstant.GOTO_SHORTLINK_KEY.formatted(fullShortUrl), shortLinkDO.getOriginUrl());
