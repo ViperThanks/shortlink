@@ -15,7 +15,7 @@ public final class RedisKeyConstant {
     /**
      * 短链接跳转空置key
      */
-    public static final String GOTO_SHORTLINK_IS_NULL_KEY = "shortlink_goto_%s";
+    public static final String GOTO_SHORTLINK_IS_NULL_KEY = "shortlink_isnull_goto_%s";
     /**
      * 短链接跳转分布式锁key
      */

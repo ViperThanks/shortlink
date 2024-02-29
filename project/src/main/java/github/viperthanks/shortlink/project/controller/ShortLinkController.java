@@ -28,6 +28,9 @@ import java.util.List;
 public class ShortLinkController {
     private final ShortLinkService shortLinkService;
 
+    /**
+     * 短链接跳转原始链接
+     */
     @RequestMapping(value = "/{shortlink-uri}", method = RequestMethod.GET)
     public void restoreUrl(@PathVariable("shortlink-uri") String requestParam,
                            HttpServletRequest request, HttpServletResponse response) {
