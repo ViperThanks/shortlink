@@ -60,7 +60,7 @@ public interface ShortLinkRemoteService {
     }
 
     default Result<UrlTitleRespDTO> getUrlTitleByUrl(String url) {
-        return JSON.parseObject(HttpUtil.get("http://127.0.0.1:8001/api/shortlink/title", Map.of("url", url)), new TypeReference<>() {
-        });
+        String json = HttpUtil.get("http://127.0.0.1:8001/api/shortlink/v1/title?url=%s".formatted(url));
+        return JSON.parseObject(json, new TypeReference<>() {});
     }
 }
