@@ -29,17 +29,24 @@ import github.viperthanks.shortlink.project.toolkit.SQLResultHelper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -77,6 +84,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .shortUri(shortLinkSuffix)
                 .enableStatus(0)
                 .fullShortUrl(fullShortUrl)
+                .favicon(getFavicon(requestParam.getOriginUrl()))
                 .build();
         ShortLinkGotoDO shortLinkGotoDO = ShortLinkGotoDO.builder()
                 .gid(requestParam.getGid())
@@ -269,5 +277,43 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             shortLinkSuffix = HashUtil.hashToBase62(originUrl);
         } while (shortUriCreateCachePenetrationBloomFilter.contains(requestParam.getDomain() + "/" + shortLinkSuffix));
         return shortLinkSuffix;
+    }
+
+
+    /**
+     * 获取网站的favicon图标
+     * @param url 网站url
+     */
+    @SneakyThrows
+    private String getFavicon(String url) {
+        URL targetUrl = new URL(url);
+        HttpURLConnection connection = (HttpURLConnection) (targetUrl.openConnection());
+        connection.setInstanceFollowRedirects(false);
+        connection.setRequestMethod(HttpMethod.GET.name());
+        connection.connect();
+
+        //301 or 302
+        int responseCode = connection.getResponseCode();
+        if (HttpURLConnection.HTTP_MOVED_PERM == responseCode || HttpURLConnection.HTTP_MOVED_TEMP == responseCode) {
+            //获取重定向的url对象
+            String redirectUrl = connection.getHeaderField("Location");
+            if (StringUtils.isNotBlank(redirectUrl)){
+                URL newUrl = new URL(redirectUrl);
+                connection = (HttpURLConnection) newUrl.openConnection();
+                connection.setRequestMethod(HttpMethod.GET.name());
+                connection.connect();
+                responseCode = connection.getResponseCode();
+            }
+        }
+        // 200
+        if (responseCode == HttpURLConnection.HTTP_OK) {
+            Document document = Jsoup.connect(url).get();
+            Element faviconLink = document.select("link[rel~=(?i)^(shortcut )?icon]").first();
+            if (null != faviconLink) {
+                return faviconLink.attr("abs:href");
+            }
+
+        }
+        return null;
     }
 }
