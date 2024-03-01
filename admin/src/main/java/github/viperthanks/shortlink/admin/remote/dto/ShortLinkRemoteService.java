@@ -12,6 +12,7 @@ import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkPageReqDTO;
 import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkUpdateReqDTO;
 import github.viperthanks.shortlink.admin.remote.dto.resp.ShortLinkCreateRespDTO;
 import github.viperthanks.shortlink.admin.remote.dto.resp.ShortLinkPageRespDTO;
+import github.viperthanks.shortlink.admin.remote.dto.resp.UrlTitleRespDTO;
 
 import java.util.List;
 import java.util.Map;
@@ -56,5 +57,10 @@ public interface ShortLinkRemoteService {
 
     default void updateShortLink(ShortLinkUpdateReqDTO requestParam) {
         HttpUtil.post("http://127.0.0.1:8001/api/shortlink/v1/create", JSON.toJSONString(requestParam));
+    }
+
+    default Result<UrlTitleRespDTO> getUrlTitleByUrl(String url) {
+        return JSON.parseObject(HttpUtil.get("http://127.0.0.1:8001/api/shortlink/title", Map.of("url", url)), new TypeReference<>() {
+        });
     }
 }
