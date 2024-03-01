@@ -29,6 +29,7 @@
         <redisson.version>3.21.3</redisson.version>
         <guava.version>30.0-jre</guava.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
+        <gsoup.version>1.17.2</gsoup.version>
     </properties>
 
     <dependencies>
@@ -117,6 +118,12 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>${gsoup.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
