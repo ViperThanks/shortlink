@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.google.common.collect.ImmutableMap;
 import github.viperthanks.shortlink.admin.common.convention.result.Result;
 import github.viperthanks.shortlink.admin.dto.resp.ShortLinkGroupCountQueryRespDTO;
+import github.viperthanks.shortlink.admin.remote.dto.req.RecycleBinSaveReqDTO;
 import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkCreateReqDTO;
 import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkPageReqDTO;
 import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkUpdateReqDTO;
@@ -62,5 +63,12 @@ public interface ShortLinkRemoteService {
     default Result<UrlTitleRespDTO> getUrlTitleByUrl(String url) {
         String json = HttpUtil.get("http://127.0.0.1:8001/api/shortlink/v1/title?url=%s".formatted(url));
         return JSON.parseObject(json, new TypeReference<>() {});
+    }
+
+    /**
+     * 保存到回收站
+     */
+    default void saveRecycleBin(RecycleBinSaveReqDTO requestParam) {
+        HttpUtil.post("http://127.0.0.1:8001/api/shortlink/v1/recycle-bin/save", JSON.toJSONString(requestParam));
     }
 }

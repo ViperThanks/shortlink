@@ -43,6 +43,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -68,6 +69,9 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final ShortLinkGotoMapper shortLinkGotoMapper;
     private final StringRedisTemplate stringRedisTemplate;
     private final RedissonClient redissonClient;
+
+    //transactional template嵌套太多层了
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
         String shortLinkSuffix = generateSuffix(requestParam);
@@ -196,12 +200,12 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         //看看布隆过滤器有没有
         boolean contains = shortUriCreateCachePenetrationBloomFilter.contains(fullShortUrl);
         if (!contains) {
-            sendRedirect(response, "/page/notfound");
+            send2Notfound(response);
             return;
         }
         String isNull = stringRedisTemplate.opsForValue().get(RedisKeyConstant.GOTO_SHORTLINK_IS_NULL_KEY.formatted(fullShortUrl));
         if (StringUtils.isNotBlank(isNull)) {
-            sendRedirect(response, "/page/notfound");
+            send2Notfound(response);
             return;
         }
         //不命中缓存，重启缓存时开启分布式锁，这里做悲观逻辑
@@ -220,7 +224,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 //缓存穿透的实现
                 stringRedisTemplate.opsForValue().set(RedisKeyConstant.GOTO_SHORTLINK_IS_NULL_KEY.formatted(fullShortUrl), "-", DEFAULT_IS_NULL_DURATION);
                 log.error("根据fullShortUrl ： {} 无法获取 hasShortLinkGotoDO , uri : {} , ip : {}", fullShortUrl, uri, request.getRemoteAddr());
-                sendRedirect(response, "/page/notfound");
+                send2Notfound(response);
                 return;
             }
             LambdaQueryWrapper<ShortLinkDO> shortLinkQueryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
@@ -231,13 +235,13 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             ShortLinkDO shortLinkDO = baseMapper.selectOne(shortLinkQueryWrapper);
             if (null == shortLinkDO) {
                 stringRedisTemplate.opsForValue().set(RedisKeyConstant.GOTO_SHORTLINK_IS_NULL_KEY.formatted(fullShortUrl), "-", DEFAULT_IS_NULL_DURATION);
-                sendRedirect(response, "/page/notfound");
+                send2Notfound(response);
                 return;
             }
             long linkCacheValidDate = LinkUtil.getLinkCacheValidDate(shortLinkDO.getValidDate());
             if (linkCacheValidDate == -1L) {
                 stringRedisTemplate.opsForValue().set(RedisKeyConstant.GOTO_SHORTLINK_IS_NULL_KEY.formatted(fullShortUrl), "-", DEFAULT_IS_NULL_DURATION);
-                sendRedirect(response, "/page/notfound");
+                send2Notfound(response);
                 return;
             }
             stringRedisTemplate.opsForValue().set(
@@ -252,6 +256,14 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             lock.unlock();
         }
     }
+
+    /**
+     * 重定向到找不到页面
+     */
+    private void send2Notfound(HttpServletResponse response) {
+        sendRedirect(response, "/page/notfound");
+    }
+
 
     /**
      * 发送重定向链接
