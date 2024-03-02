@@ -1,7 +1,9 @@
 package github.viperthanks.shortlink.project.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import github.viperthanks.shortlink.project.common.constant.RedisKeyConstant;
@@ -10,6 +12,8 @@ import github.viperthanks.shortlink.project.common.convention.exception.ServiceE
 import github.viperthanks.shortlink.project.dao.entity.ShortLinkDO;
 import github.viperthanks.shortlink.project.dao.mapper.ShortLinkMapper;
 import github.viperthanks.shortlink.project.dto.req.RecycleBinSaveReqDTO;
+import github.viperthanks.shortlink.project.dto.req.ShortLinkPageReqDTO;
+import github.viperthanks.shortlink.project.dto.resp.ShortLinkPageRespDTO;
 import github.viperthanks.shortlink.project.service.RecycleBinService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,6 +64,28 @@ public class RecycleBinServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLin
             throw new ServiceException("服务端异常，请重试");
         }
         stringRedisTemplate.delete(RedisKeyConstant.GOTO_SHORTLINK_KEY.formatted(requestParam.getFullShortUrl()));
+
+    }
+
+    /**
+     * 分页查询回收站短链接
+     *
+     * @param requestParam 分页短链接请求参数
+     */
+    @Override
+    public IPage<ShortLinkPageRespDTO> pageRecyleBinShortLink(ShortLinkPageReqDTO requestParam) {
+        LambdaQueryWrapper<ShortLinkDO> wrapper = Wrappers.lambdaQuery(entityClass)
+                .eq(ShortLinkDO::getGid, requestParam.getGid())
+                .eq(ShortLinkDO::getEnableStatus, 1)
+                .eq(ShortLinkDO::getDelFlag, 0)
+                .orderByDesc(ShortLinkDO::getCreateTime);
+        IPage<ShortLinkDO> resultPage = page(requestParam, wrapper);
+        return resultPage.convert(each -> {
+            ShortLinkPageRespDTO bean = BeanUtil.toBean(each, ShortLinkPageRespDTO.class);
+            if (!StringUtils.startsWithAny(bean.getDomain(), "http://", "https://"))
+                bean.setDomain("http://" + bean.getDomain());
+            return bean;
+        });
 
     }
 }
