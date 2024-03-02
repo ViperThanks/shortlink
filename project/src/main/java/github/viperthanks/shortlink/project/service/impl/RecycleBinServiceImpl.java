@@ -12,7 +12,7 @@ import github.viperthanks.shortlink.project.common.convention.exception.ServiceE
 import github.viperthanks.shortlink.project.dao.entity.ShortLinkDO;
 import github.viperthanks.shortlink.project.dao.mapper.ShortLinkMapper;
 import github.viperthanks.shortlink.project.dto.req.RecycleBinSaveReqDTO;
-import github.viperthanks.shortlink.project.dto.req.ShortLinkPageReqDTO;
+import github.viperthanks.shortlink.project.dto.req.ShortLinkRecycleBinPageReqDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkPageRespDTO;
 import github.viperthanks.shortlink.project.service.RecycleBinService;
 import lombok.RequiredArgsConstructor;
@@ -73,12 +73,12 @@ public class RecycleBinServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLin
      * @param requestParam 分页短链接请求参数
      */
     @Override
-    public IPage<ShortLinkPageRespDTO> pageRecyleBinShortLink(ShortLinkPageReqDTO requestParam) {
+    public IPage<ShortLinkPageRespDTO> pageRecycleBinShortLink(ShortLinkRecycleBinPageReqDTO requestParam) {
         LambdaQueryWrapper<ShortLinkDO> wrapper = Wrappers.lambdaQuery(entityClass)
-                .eq(ShortLinkDO::getGid, requestParam.getGid())
+                .in(ShortLinkDO::getGid, requestParam.getGidList())
                 .eq(ShortLinkDO::getEnableStatus, 1)
                 .eq(ShortLinkDO::getDelFlag, 0)
-                .orderByDesc(ShortLinkDO::getCreateTime);
+                .orderByDesc(ShortLinkDO::getUpdateTime);
         IPage<ShortLinkDO> resultPage = page(requestParam, wrapper);
         return resultPage.convert(each -> {
             ShortLinkPageRespDTO bean = BeanUtil.toBean(each, ShortLinkPageRespDTO.class);
@@ -86,6 +86,5 @@ public class RecycleBinServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLin
                 bean.setDomain("http://" + bean.getDomain());
             return bean;
         });
-
     }
 }

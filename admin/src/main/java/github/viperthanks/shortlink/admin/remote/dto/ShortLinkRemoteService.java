@@ -7,10 +7,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.google.common.collect.ImmutableMap;
 import github.viperthanks.shortlink.admin.common.convention.result.Result;
 import github.viperthanks.shortlink.admin.dto.resp.ShortLinkGroupCountQueryRespDTO;
-import github.viperthanks.shortlink.admin.remote.dto.req.RecycleBinSaveReqDTO;
-import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkCreateReqDTO;
-import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkPageReqDTO;
-import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkUpdateReqDTO;
+import github.viperthanks.shortlink.admin.remote.dto.req.*;
 import github.viperthanks.shortlink.admin.remote.dto.resp.ShortLinkCreateRespDTO;
 import github.viperthanks.shortlink.admin.remote.dto.resp.ShortLinkPageRespDTO;
 import github.viperthanks.shortlink.admin.remote.dto.resp.UrlTitleRespDTO;
@@ -70,18 +67,5 @@ public interface ShortLinkRemoteService {
      */
     default void saveRecycleBin(RecycleBinSaveReqDTO requestParam) {
         HttpUtil.post("http://127.0.0.1:8001/api/shortlink/v1/recycle-bin/save", JSON.toJSONString(requestParam));
-    }
-
-    /**
-     * 回收站短链接分页查询
-     * @param requestParam 短链接分页查询参数
-     */
-    default Result<IPage<ShortLinkPageRespDTO>> pageRecycleBinShortLink(ShortLinkPageReqDTO requestParam) {
-        Map<String, Object> requestParamMap = ImmutableMap.of(
-                "gid", requestParam.getGid(),
-                "current", requestParam.getCurrent(),
-                "size", requestParam.getSize());
-        String responseBody = HttpUtil.get("http://127.0.0.1:8001/api/shortlink/v1/recycle-bin/page", requestParamMap);
-        return JSON.parseObject(responseBody, new TypeReference<>() {});
     }
 }
