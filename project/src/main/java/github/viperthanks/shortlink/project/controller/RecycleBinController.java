@@ -3,6 +3,7 @@ package github.viperthanks.shortlink.project.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import github.viperthanks.shortlink.project.common.convention.result.Result;
 import github.viperthanks.shortlink.project.common.convention.result.Results;
+import github.viperthanks.shortlink.project.dto.req.RecycleBinRecoverReqDTO;
 import github.viperthanks.shortlink.project.dto.req.RecycleBinSaveReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkRecycleBinPageReqDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkPageRespDTO;
@@ -31,6 +32,15 @@ public class RecycleBinController {
     @RequestMapping(value = "/api/shortlink/v1/recycle-bin/save", method = RequestMethod.POST)
     public Result<Void> saveRecycleBin(@RequestBody RecycleBinSaveReqDTO requestParam) {
         recycleBinService.saveRecycleBin(requestParam);
+        return Results.success();
+    }
+
+    /**
+     * 回收站恢复短链接
+     */
+    @RequestMapping(value = "/api/shortlink/v1/recycle-bin/recover", method = RequestMethod.POST)
+    public Result<Void> recoverFormRecycleBin(@RequestBody RecycleBinRecoverReqDTO requestParam) {
+        recycleBinService.recoverFormRecycleBin(requestParam);
         return Results.success();
     }
 

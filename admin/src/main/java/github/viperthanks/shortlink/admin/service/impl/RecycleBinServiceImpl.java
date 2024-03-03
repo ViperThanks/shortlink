@@ -46,6 +46,5 @@ public class RecycleBinServiceImpl implements RecycleBinService {
         }
         requestParam.setGidList(gidList);
         return recycleBinService.pageRecycleBinShortLink(requestParam);
-
     }
 }

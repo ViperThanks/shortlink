@@ -62,10 +62,4 @@ public interface ShortLinkRemoteService {
         return JSON.parseObject(json, new TypeReference<>() {});
     }
 
-    /**
-     * 保存到回收站
-     */
-    default void saveRecycleBin(RecycleBinSaveReqDTO requestParam) {
-        HttpUtil.post("http://127.0.0.1:8001/api/shortlink/v1/recycle-bin/save", JSON.toJSONString(requestParam));
-    }
 }

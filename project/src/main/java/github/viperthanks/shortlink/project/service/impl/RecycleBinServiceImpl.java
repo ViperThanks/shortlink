@@ -11,15 +11,19 @@ import github.viperthanks.shortlink.project.common.convention.exception.ClientEx
 import github.viperthanks.shortlink.project.common.convention.exception.ServiceException;
 import github.viperthanks.shortlink.project.dao.entity.ShortLinkDO;
 import github.viperthanks.shortlink.project.dao.mapper.ShortLinkMapper;
+import github.viperthanks.shortlink.project.dto.req.RecycleBinRecoverReqDTO;
 import github.viperthanks.shortlink.project.dto.req.RecycleBinSaveReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkRecycleBinPageReqDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkPageRespDTO;
 import github.viperthanks.shortlink.project.service.RecycleBinService;
+import github.viperthanks.shortlink.project.toolkit.LinkUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * desc:
@@ -30,7 +34,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class RecycleBinServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLinkDO> implements RecycleBinService {
+public class  RecycleBinServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLinkDO> implements RecycleBinService {
 
 
     private final StringRedisTemplate stringRedisTemplate;
@@ -86,5 +90,47 @@ public class RecycleBinServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLin
                 bean.setDomain("http://" + bean.getDomain());
             return bean;
         });
+    }
+
+    /**
+     * 从垃圾桶中释放
+     */
+    @Override
+    public void recoverFormRecycleBin(RecycleBinRecoverReqDTO requestParam) {
+        if (StringUtils.isAnyBlank(requestParam.getGid(), requestParam.getFullShortUrl())) {
+            throw new ClientException("参数错误，请重试");
+        }
+        //组装query wrapper
+        LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
+                .eq(ShortLinkDO::getGid, requestParam.getGid())
+                .eq(ShortLinkDO::getFullShortUrl, requestParam.getFullShortUrl())
+                .eq(ShortLinkDO::getEnableStatus, 1)
+                .eq(ShortLinkDO::getDelFlag, 0);
+        ShortLinkDO shortLinkDO = baseMapper.selectOne(queryWrapper);
+        if (null == shortLinkDO) {
+            throw new ClientException("查找不到改短链接数据，请重试");
+        }
+        //组装update wrapper
+        LambdaUpdateWrapper<ShortLinkDO> updateWrapper = Wrappers.lambdaUpdate(ShortLinkDO.class)
+                .eq(ShortLinkDO::getGid, requestParam.getGid())
+                .eq(ShortLinkDO::getFullShortUrl, requestParam.getFullShortUrl())
+                .eq(ShortLinkDO::getEnableStatus, 1)
+                .eq(ShortLinkDO::getDelFlag, 0)
+                .set(ShortLinkDO::getEnableStatus, 0);
+        boolean update = this.update(updateWrapper);
+        if (!update) {
+            throw new ServiceException("修改失败，请重试");
+        }
+        //重建缓存 （可做可不做，结合业务，产品经理等思考）
+        long linkCacheValidDate = LinkUtil.getLinkCacheValidDate(shortLinkDO.getValidDate());
+        if (linkCacheValidDate != -1L) {
+            stringRedisTemplate.opsForValue().set(
+                    RedisKeyConstant.GOTO_SHORTLINK_KEY.formatted(requestParam.getFullShortUrl()),
+                    shortLinkDO.getOriginUrl(),
+                    linkCacheValidDate,
+                    TimeUnit.MILLISECONDS
+            );
+        }
+        stringRedisTemplate.delete(RedisKeyConstant.GOTO_SHORTLINK_IS_NULL_KEY.formatted(requestParam.getFullShortUrl()));
     }
 }
