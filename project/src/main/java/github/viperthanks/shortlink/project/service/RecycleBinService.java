@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import github.viperthanks.shortlink.project.dao.entity.ShortLinkDO;
 import github.viperthanks.shortlink.project.dto.req.RecycleBinRecoverReqDTO;
+import github.viperthanks.shortlink.project.dto.req.RecycleBinRemoveReqDTO;
 import github.viperthanks.shortlink.project.dto.req.RecycleBinSaveReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkRecycleBinPageReqDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkPageRespDTO;
@@ -32,4 +33,9 @@ public interface RecycleBinService extends IService<ShortLinkDO> {
      * 从垃圾桶中恢复
      */
     void recoverFormRecycleBin(RecycleBinRecoverReqDTO requestParam);
+
+    /**
+     * 从回收站中删除
+     */
+    void removeFormRecycleBin(RecycleBinRemoveReqDTO requestParam);
 }

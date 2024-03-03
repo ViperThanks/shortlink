@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.google.common.collect.ImmutableMap;
 import github.viperthanks.shortlink.admin.common.convention.result.Result;
 import github.viperthanks.shortlink.admin.remote.dto.req.RecycleBinRecoverReqDTO;
+import github.viperthanks.shortlink.admin.remote.dto.req.RecycleBinRemoveReqDTO;
 import github.viperthanks.shortlink.admin.remote.dto.req.RecycleBinSaveReqDTO;
 import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkRecycleBinPageReqDTO;
 import github.viperthanks.shortlink.admin.remote.dto.resp.ShortLinkPageRespDTO;
@@ -46,5 +47,12 @@ public interface RecycleBinService {
      */
     default void recoverFormRecycleBin(RecycleBinRecoverReqDTO requestParam) {
         HttpUtil.post("http://127.0.0.1:8001/api/shortlink/v1/recycle-bin/recover", JSON.toJSONString(requestParam));
+    }
+
+    /**
+     * 回收站移除短链接
+     */
+    default void removeFormRecycleBin(RecycleBinRemoveReqDTO requestParam) {
+        HttpUtil.post("http://127.0.0.1:8001/api/shortlink/v1/recycle-bin/remove", JSON.toJSONString(requestParam));
     }
 }

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import github.viperthanks.shortlink.project.common.convention.result.Result;
 import github.viperthanks.shortlink.project.common.convention.result.Results;
 import github.viperthanks.shortlink.project.dto.req.RecycleBinRecoverReqDTO;
+import github.viperthanks.shortlink.project.dto.req.RecycleBinRemoveReqDTO;
 import github.viperthanks.shortlink.project.dto.req.RecycleBinSaveReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkRecycleBinPageReqDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkPageRespDTO;
@@ -41,6 +42,15 @@ public class RecycleBinController {
     @RequestMapping(value = "/api/shortlink/v1/recycle-bin/recover", method = RequestMethod.POST)
     public Result<Void> recoverFormRecycleBin(@RequestBody RecycleBinRecoverReqDTO requestParam) {
         recycleBinService.recoverFormRecycleBin(requestParam);
+        return Results.success();
+    }
+
+    /**
+     * 回收站移除短链接
+     */
+    @RequestMapping(value = "/api/shortlink/v1/recycle-bin/remove", method = RequestMethod.POST)
+    public Result<Void> removeFormRecycleBin(@RequestBody RecycleBinRemoveReqDTO requestParam) {
+        recycleBinService.removeFormRecycleBin(requestParam);
         return Results.success();
     }
 
