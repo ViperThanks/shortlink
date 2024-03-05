@@ -1,6 +1,7 @@
 package github.viperthanks.shortlink.project.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.date.DateUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -12,8 +13,10 @@ import github.viperthanks.shortlink.project.common.convention.exception.ClientEx
 import github.viperthanks.shortlink.project.common.convention.exception.ServiceException;
 import github.viperthanks.shortlink.project.common.database.BaseDO;
 import github.viperthanks.shortlink.project.common.enums.ValidDateTypeEnum;
+import github.viperthanks.shortlink.project.dao.entity.LinkAccessStatsDO;
 import github.viperthanks.shortlink.project.dao.entity.ShortLinkDO;
 import github.viperthanks.shortlink.project.dao.entity.ShortLinkGotoDO;
+import github.viperthanks.shortlink.project.dao.mapper.LinkAccessStatsMapper;
 import github.viperthanks.shortlink.project.dao.mapper.ShortLinkGotoMapper;
 import github.viperthanks.shortlink.project.dao.mapper.ShortLinkMapper;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkCreateReqDTO;
@@ -26,6 +29,7 @@ import github.viperthanks.shortlink.project.service.ShortLinkService;
 import github.viperthanks.shortlink.project.toolkit.HashUtil;
 import github.viperthanks.shortlink.project.toolkit.LinkUtil;
 import github.viperthanks.shortlink.project.toolkit.SQLResultHelper;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -48,11 +52,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static github.viperthanks.shortlink.project.common.constant.RedisConstant.DEFAULT_IS_NULL_DURATION;
+import static github.viperthanks.shortlink.project.common.constant.RedisKeyConstant.SHORTLINK_STATS_UIP_KEY;
+import static github.viperthanks.shortlink.project.common.constant.RedisKeyConstant.SHORTLINK_STATS_UV_KEY;
 
 /**
  * desc: 链接业务实现层
@@ -69,6 +75,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final ShortLinkGotoMapper shortLinkGotoMapper;
     private final StringRedisTemplate stringRedisTemplate;
     private final RedissonClient redissonClient;
+    private final LinkAccessStatsMapper linkAccessStatsMapper;
 
     //transactional template嵌套太多层了
     @Transactional(rollbackFor = Exception.class)
@@ -195,7 +202,9 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         final String fullShortUrl = serverName + '/' + uri;
         String originalLink = stringRedisTemplate.opsForValue().get(RedisKeyConstant.GOTO_SHORTLINK_KEY.formatted(fullShortUrl));
         if (StringUtils.isNotBlank(originalLink)) {
+            doShortLinkStates(fullShortUrl, null, request, response);
             sendRedirect(response, originalLink);
+            return;
         }
         //看看布隆过滤器有没有
         boolean contains = shortUriCreateCachePenetrationBloomFilter.contains(fullShortUrl);
@@ -214,6 +223,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             lock.lock();
             originalLink = stringRedisTemplate.opsForValue().get(RedisKeyConstant.GOTO_SHORTLINK_KEY.formatted(fullShortUrl));
             if (StringUtils.isNotBlank(originalLink)) {
+                doShortLinkStates(fullShortUrl, null, request, response);
                 sendRedirect(response, originalLink);
                 return;
             }
@@ -249,11 +259,75 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     shortLinkDO.getOriginUrl(),
                     linkCacheValidDate,
                     TimeUnit.MILLISECONDS);
+            doShortLinkStates(fullShortUrl, shortLinkDO.getGid(), request, response);
             sendRedirect(response, shortLinkDO.getOriginUrl());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }finally {
             lock.unlock();
+        }
+    }
+
+
+    private String getUVName(){
+        return "uv";
+    }
+
+
+    /**
+     * 短链接基本数据统计
+     */
+    private void doShortLinkStates(String fullShortUrl, String gid, HttpServletRequest request, HttpServletResponse response) {
+        try {
+            //uv的实现
+            Runnable createAndAddCookieTask = () -> {
+                String uvValue = UUID.randomUUID().toString();
+                Cookie uvCookie = new Cookie(getUVName(), uvValue);
+                uvCookie.setMaxAge(60 * 60 * 60 * 24 * 30);
+                uvCookie.setPath(StringUtils.substring(fullShortUrl, fullShortUrl.lastIndexOf("/"), fullShortUrl.length()));
+                response.addCookie(uvCookie);
+                stringRedisTemplate.opsForSet().add(SHORTLINK_STATS_UV_KEY.formatted(fullShortUrl), uvValue);
+            };
+            AtomicBoolean uvFirstFlag = new AtomicBoolean(true);
+            final Cookie[] cookies = request.getCookies();
+            if (ObjectUtils.isNotEmpty(cookies)) {
+                Arrays.stream(cookies).filter(each -> Objects.equals(each.getName(), getUVName()))
+                        .findFirst()
+                        .map(Cookie::getValue)
+                        .ifPresentOrElse(each -> {
+                            Long result = stringRedisTemplate.opsForSet().add(SHORTLINK_STATS_UV_KEY.formatted(fullShortUrl), each);
+                            uvFirstFlag.set(ObjectUtils.compare(result, 0L) > 0);
+                        }, createAndAddCookieTask);
+            }else {
+                createAndAddCookieTask.run();
+            }
+            //uip的实现
+            String ip = LinkUtil.getIp(request);
+            Long result = stringRedisTemplate.opsForSet().add(SHORTLINK_STATS_UIP_KEY.formatted(fullShortUrl), ip);
+            boolean ipFirstFlag = ObjectUtils.compare(result, 0L) > 0;
+            if (StringUtils.isBlank(gid)) {
+                LambdaQueryWrapper<ShortLinkGotoDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkGotoDO.class)
+                        .eq(ShortLinkGotoDO::getFullShortUrl, fullShortUrl);
+                ShortLinkGotoDO hasShortLinkGotoDO = shortLinkGotoMapper.selectOne(queryWrapper);
+                gid = hasShortLinkGotoDO.getGid();
+            }
+            Date now = new Date();
+            int hour = DateUtil.hour(now, true);
+            int dayOfWeek = DateUtil.dayOfWeek(now);
+            //构建基本数据对象
+                LinkAccessStatsDO linkAccessStatsDO = LinkAccessStatsDO.builder()
+                        .pv(1)
+                        .uip(ipFirstFlag ? 1 : 0)
+                        .uv(uvFirstFlag.get() ? 1 : 0)
+                        .fullShortUrl(fullShortUrl)
+                        .gid(gid)
+                        .weekday(dayOfWeek)
+                        .hour(hour)
+                        .date(now)
+                        .build();
+            linkAccessStatsMapper.shortLinkStates(linkAccessStatsDO);
+        } catch (Exception ex) {
+            log.error("执行短链接基本数据统计时报错 ：fullShortUrl ：{}， gid : {}", fullShortUrl, gid, ex);
         }
     }
 
