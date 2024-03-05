@@ -18,3 +18,9 @@ spring:
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+
+
+shortlink:
+  stats:
+    locale:
+      amap-key: e3bd2db8ba8a492f0876b0a6e6f9aa4e

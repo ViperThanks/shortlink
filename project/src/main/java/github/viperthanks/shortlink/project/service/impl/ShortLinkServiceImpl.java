@@ -2,6 +2,9 @@ package github.viperthanks.shortlink.project.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.http.HttpUtil;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -14,9 +17,11 @@ import github.viperthanks.shortlink.project.common.convention.exception.ServiceE
 import github.viperthanks.shortlink.project.common.database.BaseDO;
 import github.viperthanks.shortlink.project.common.enums.ValidDateTypeEnum;
 import github.viperthanks.shortlink.project.dao.entity.LinkAccessStatsDO;
+import github.viperthanks.shortlink.project.dao.entity.LinkLocaleStatsDO;
 import github.viperthanks.shortlink.project.dao.entity.ShortLinkDO;
 import github.viperthanks.shortlink.project.dao.entity.ShortLinkGotoDO;
 import github.viperthanks.shortlink.project.dao.mapper.LinkAccessStatsMapper;
+import github.viperthanks.shortlink.project.dao.mapper.LinkLocaleStatsMapper;
 import github.viperthanks.shortlink.project.dao.mapper.ShortLinkGotoMapper;
 import github.viperthanks.shortlink.project.dao.mapper.ShortLinkMapper;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkCreateReqDTO;
@@ -43,6 +48,7 @@ import org.jsoup.nodes.Element;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpMethod;
@@ -59,6 +65,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static github.viperthanks.shortlink.project.common.constant.RedisConstant.DEFAULT_IS_NULL_DURATION;
 import static github.viperthanks.shortlink.project.common.constant.RedisKeyConstant.SHORTLINK_STATS_UIP_KEY;
 import static github.viperthanks.shortlink.project.common.constant.RedisKeyConstant.SHORTLINK_STATS_UV_KEY;
+import static github.viperthanks.shortlink.project.common.constant.ShortLinkConstant.GAODE_AMAP_REMOTE_SUC;
+import static github.viperthanks.shortlink.project.common.constant.ShortLinkConstant.GAODE_AMAP_REMOTE_URL;
 
 /**
  * desc: 链接业务实现层
@@ -76,6 +84,10 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final StringRedisTemplate stringRedisTemplate;
     private final RedissonClient redissonClient;
     private final LinkAccessStatsMapper linkAccessStatsMapper;
+    private final LinkLocaleStatsMapper linkLocaleStatsMapper;
+
+    @Value("${shortlink.stats.locale.amap-key}")
+    private String amqpKey;
 
     //transactional template嵌套太多层了
     @Transactional(rollbackFor = Exception.class)
@@ -315,20 +327,58 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             int hour = DateUtil.hour(now, true);
             int dayOfWeek = DateUtil.dayOfWeek(now);
             //构建基本数据对象
-                LinkAccessStatsDO linkAccessStatsDO = LinkAccessStatsDO.builder()
-                        .pv(1)
-                        .uip(ipFirstFlag ? 1 : 0)
-                        .uv(uvFirstFlag.get() ? 1 : 0)
+            LinkAccessStatsDO linkAccessStatsDO = LinkAccessStatsDO.builder()
+                    .pv(1)
+                    .uip(ipFirstFlag ? 1 : 0)
+                    .uv(uvFirstFlag.get() ? 1 : 0)
+                    .fullShortUrl(fullShortUrl)
+                    .gid(gid)
+                    .weekday(dayOfWeek)
+                    .hour(hour)
+                    .date(now)
+                    .build();
+            linkAccessStatsMapper.shortLinkStates(linkAccessStatsDO);
+
+
+            //调用高德的key
+            String json = sendHttpRequest2GaodeMap(ip);
+            JSONObject jsonObject = JSON.parseObject(json);
+            String infocode = jsonObject.getString("infocode");
+            if (Objects.equals(infocode, GAODE_AMAP_REMOTE_SUC)) {
+                LinkLocaleStatsDO localeStatsDO = LinkLocaleStatsDO.builder()
                         .fullShortUrl(fullShortUrl)
                         .gid(gid)
-                        .weekday(dayOfWeek)
-                        .hour(hour)
                         .date(now)
+                        .province(handleGaoDeApiRespString(jsonObject.getString("province")))
+                        .city(handleGaoDeApiRespString(jsonObject.getString("city")))
+                        .adcode(handleGaoDeApiRespString(jsonObject.getString("adcode")))
+                        .cnt(1)
+                        .country("中国")
                         .build();
-            linkAccessStatsMapper.shortLinkStates(linkAccessStatsDO);
+                linkLocaleStatsMapper.shortLinkLocaleStates(localeStatsDO);
+            }
+            //locale的
+
+
         } catch (Exception ex) {
             log.error("执行短链接基本数据统计时报错 ：fullShortUrl ：{}， gid : {}", fullShortUrl, gid, ex);
         }
+    }
+
+    private String handleGaoDeApiRespString(String string) {
+        if (StringUtils.isBlank(string) || StringUtils.equals(string, "[]")) {
+            return "未知";
+        }
+        return string;
+    }
+
+
+    /**
+     * 发送请求到高德那
+     */
+    private String sendHttpRequest2GaodeMap(String ip) {
+        Map<String, Object> param = Map.of("ip", ip, "key", amqpKey);
+        return HttpUtil.get(GAODE_AMAP_REMOTE_URL, param);
     }
 
     /**
