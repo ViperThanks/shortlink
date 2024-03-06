@@ -55,6 +55,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static github.viperthanks.shortlink.project.common.constant.RedisConstant.DEFAULT_IS_NULL_DURATION;
 import static github.viperthanks.shortlink.project.common.constant.RedisKeyConstant.SHORTLINK_STATS_UIP_KEY;
@@ -81,6 +82,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final LinkLocaleStatsMapper linkLocaleStatsMapper;
     private final LinkOsStatsMapper linkOsStatsMapper;
     private final LinkBrowserStatsMapper linkBrowserStatsMapper;
+    private final LinkAccessLogsMapper linkAccessLogsMapper;
 
     @Value("${shortlink.stats.locale.amap-key}")
     private String amqpKey;
@@ -288,13 +290,14 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private void doShortLinkStates(String fullShortUrl, String gid, HttpServletRequest request, HttpServletResponse response) {
         try {
             //uv的实现
+            AtomicReference<String> uvValue = new AtomicReference<>();
             Runnable createAndAddCookieTask = () -> {
-                String uvValue = UUID.randomUUID().toString();
-                Cookie uvCookie = new Cookie(getUVName(), uvValue);
+                uvValue.set(UUID.randomUUID().toString());
+                Cookie uvCookie = new Cookie(getUVName(), uvValue.get());
                 uvCookie.setMaxAge(60 * 60 * 60 * 24 * 30);
                 uvCookie.setPath(StringUtils.substring(fullShortUrl, fullShortUrl.lastIndexOf("/"), fullShortUrl.length()));
                 response.addCookie(uvCookie);
-                stringRedisTemplate.opsForSet().add(SHORTLINK_STATS_UV_KEY.formatted(fullShortUrl), uvValue);
+                stringRedisTemplate.opsForSet().add(SHORTLINK_STATS_UV_KEY.formatted(fullShortUrl), uvValue.get());
             };
             AtomicBoolean uvFirstFlag = new AtomicBoolean(true);
             final Cookie[] cookies = request.getCookies();
@@ -303,6 +306,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                         .findFirst()
                         .map(Cookie::getValue)
                         .ifPresentOrElse(each -> {
+                            uvValue.set(each);
                             Long result = stringRedisTemplate.opsForSet().add(SHORTLINK_STATS_UV_KEY.formatted(fullShortUrl), each);
                             uvFirstFlag.set(ObjectUtils.compare(result, 0L) > 0);
                         }, createAndAddCookieTask);
@@ -364,15 +368,27 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .build();
             linkOsStatsMapper.shortLinkOsStates(osStatsDO);
 
+            String browser = LinkUtil.getBrowser(request);
             //浏览器的实现
             LinkBrowserStatsDO linkBrowserStatsDO = LinkBrowserStatsDO.builder()
-                    .browser(LinkUtil.getBrowser(((HttpServletRequest) request)))
+                    .browser(browser)
                     .cnt(1)
                     .gid(gid)
                     .fullShortUrl(fullShortUrl)
                     .date(new Date())
                     .build();
             linkBrowserStatsMapper.shortLinkBrowserState(linkBrowserStatsDO);
+
+            //logs的实现
+            LinkAccessLogsDO linkLogsDO = LinkAccessLogsDO.builder()
+                    .fullShortUrl(fullShortUrl)
+                    .user(uvValue.get())
+                    .gid(gid)
+                    .ip(ip)
+                    .os(os)
+                    .browser(browser)
+                    .build();
+            linkAccessLogsMapper.insert(linkLogsDO);
         } catch (Exception ex) {
             log.error("执行短链接基本数据统计时报错 ：fullShortUrl ：{}， gid : {}", fullShortUrl, gid, ex);
         }
