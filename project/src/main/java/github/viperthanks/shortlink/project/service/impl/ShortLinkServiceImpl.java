@@ -16,14 +16,8 @@ import github.viperthanks.shortlink.project.common.convention.exception.ClientEx
 import github.viperthanks.shortlink.project.common.convention.exception.ServiceException;
 import github.viperthanks.shortlink.project.common.database.BaseDO;
 import github.viperthanks.shortlink.project.common.enums.ValidDateTypeEnum;
-import github.viperthanks.shortlink.project.dao.entity.LinkAccessStatsDO;
-import github.viperthanks.shortlink.project.dao.entity.LinkLocaleStatsDO;
-import github.viperthanks.shortlink.project.dao.entity.ShortLinkDO;
-import github.viperthanks.shortlink.project.dao.entity.ShortLinkGotoDO;
-import github.viperthanks.shortlink.project.dao.mapper.LinkAccessStatsMapper;
-import github.viperthanks.shortlink.project.dao.mapper.LinkLocaleStatsMapper;
-import github.viperthanks.shortlink.project.dao.mapper.ShortLinkGotoMapper;
-import github.viperthanks.shortlink.project.dao.mapper.ShortLinkMapper;
+import github.viperthanks.shortlink.project.dao.entity.*;
+import github.viperthanks.shortlink.project.dao.mapper.*;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkCreateReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkPageReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkUpdateReqDTO;
@@ -85,6 +79,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final RedissonClient redissonClient;
     private final LinkAccessStatsMapper linkAccessStatsMapper;
     private final LinkLocaleStatsMapper linkLocaleStatsMapper;
+    private final LinkOsStatsMapper linkOsStatsMapper;
 
     @Value("${shortlink.stats.locale.amap-key}")
     private String amqpKey;
@@ -339,7 +334,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .build();
             linkAccessStatsMapper.shortLinkStates(linkAccessStatsDO);
 
-
+            //locale的 地区的实现
             //调用高德的key
             String json = sendHttpRequest2GaodeMap(ip);
             JSONObject jsonObject = JSON.parseObject(json);
@@ -357,8 +352,16 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                         .build();
                 linkLocaleStatsMapper.shortLinkLocaleStates(localeStatsDO);
             }
-            //locale的
-
+            //os的 操作系统的实现
+            String os = LinkUtil.getOs(request);
+            LinkOsStatsDO osStatsDO = LinkOsStatsDO.builder()
+                    .fullShortUrl(fullShortUrl)
+                    .gid(gid)
+                    .date(now)
+                    .os(os)
+                    .cnt(1)
+                    .build();
+            linkOsStatsMapper.shortLinkOsStates(osStatsDO);
 
         } catch (Exception ex) {
             log.error("执行短链接基本数据统计时报错 ：fullShortUrl ：{}， gid : {}", fullShortUrl, gid, ex);

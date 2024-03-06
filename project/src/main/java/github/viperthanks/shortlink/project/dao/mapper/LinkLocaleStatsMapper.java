@@ -15,9 +15,6 @@ public interface LinkLocaleStatsMapper extends BaseMapper<LinkLocaleStatsDO> {
     /**
      * 记录地区统计数据
      */
-    /**
-     * 记录基础访问监控数据
-     */
     @Insert(
             """
                             INSERT INTO
