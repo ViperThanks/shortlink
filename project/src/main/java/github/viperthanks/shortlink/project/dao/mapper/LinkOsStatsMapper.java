@@ -2,8 +2,13 @@ package github.viperthanks.shortlink.project.dao.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import github.viperthanks.shortlink.project.dao.entity.LinkOsStatsDO;
+import github.viperthanks.shortlink.project.dto.req.ShortLinkStatsReqDTO;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * desc: 系统统计mapper
@@ -42,4 +47,20 @@ public interface LinkOsStatsMapper extends BaseMapper<LinkOsStatsDO> {
                     """
     )
     void shortLinkOsStates(@Param(value = "linkOsStats") LinkOsStatsDO linkOsStatsDO);
+
+    /**
+     * 根据短链接获取指定日期内操作系统监控数据
+     */
+    @Select("SELECT " +
+            "    os, " +
+            "    SUM(cnt) AS count " +
+            "FROM " +
+            "    t_link_os_stats " +
+            "WHERE " +
+            "    full_short_url = #{param.fullShortUrl} " +
+            "    AND gid = #{param.gid} " +
+            "    AND date BETWEEN #{param.startDate} and #{param.endDate} " +
+            "GROUP BY " +
+            "    full_short_url, gid, os;")
+    List<HashMap<String, Object>> listOsStatsByShortLink(@Param("param") ShortLinkStatsReqDTO requestParam);
 }
