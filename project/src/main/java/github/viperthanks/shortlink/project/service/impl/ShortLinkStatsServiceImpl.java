@@ -1,13 +1,16 @@
 package github.viperthanks.shortlink.project.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateField;
 import cn.hutool.core.date.DateUtil;
-import github.viperthanks.shortlink.project.dao.entity.LinkAccessStatsDO;
-import github.viperthanks.shortlink.project.dao.entity.LinkDeviceStatsDO;
-import github.viperthanks.shortlink.project.dao.entity.LinkLocaleStatsDO;
-import github.viperthanks.shortlink.project.dao.entity.LinkNetworkStatsDO;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.google.common.collect.Maps;
+import github.viperthanks.shortlink.project.dao.entity.*;
 import github.viperthanks.shortlink.project.dao.mapper.*;
+import github.viperthanks.shortlink.project.dto.req.ShortLinkStatsAccessRecordReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkStatsReqDTO;
 import github.viperthanks.shortlink.project.dto.resp.*;
 import github.viperthanks.shortlink.project.service.ShortLinkStatsService;
@@ -17,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * desc: 短链接监控实现层
@@ -232,6 +236,35 @@ public class ShortLinkStatsServiceImpl implements ShortLinkStatsService {
                 .deviceStats(deviceStats)
                 .networkStats(networkStats)
                 .build();
+    }
+
+    /**
+     * 单个短链接指定时间内访客记录
+     */
+    @Override
+    public IPage<ShortLinkStatsAccessRecordRespDTO> shortLinkStatsAccessRecord(ShortLinkStatsAccessRecordReqDTO requestParam) {
+        //构建
+        LambdaQueryWrapper<LinkAccessLogsDO> queryWrapper = Wrappers.lambdaQuery(LinkAccessLogsDO.class)
+                .eq(LinkAccessLogsDO::getGid, requestParam.getGid())
+                .eq(LinkAccessLogsDO::getFullShortUrl, requestParam.getFullShortUrl())
+                .eq(LinkAccessLogsDO::getDelFlag, 0)
+                .between(LinkAccessLogsDO::getCreateTime, requestParam.getStartDate(), requestParam.getEndDate())
+                .orderByDesc(LinkAccessLogsDO::getCreateTime);
+        IPage<LinkAccessLogsDO> resultLinkAccessLogsDOPage = linkAccessLogsMapper.selectPage(requestParam, queryWrapper);
+        //这里是uuid list
+        List<String> userLinkAccessLogsList = resultLinkAccessLogsDOPage.getRecords().stream().map(LinkAccessLogsDO::getUser).toList();
+        List<Map<String, Object>> uvTypeList = linkAccessLogsMapper.selectUvTypeByUsers(requestParam.getGid(), requestParam.getFullShortUrl(), requestParam.getStartDate(), requestParam.getEndDate(), userLinkAccessLogsList);
+        Map<String, String> userUvTypeMap = uvTypeList.stream().collect(Collectors.toMap(
+                map -> String.valueOf(map.get("user")),
+                map -> String.valueOf(map.get("uvType")),
+                (m1, m2) -> m1,
+                () -> Maps.newHashMapWithExpectedSize(uvTypeList.size())));
+        return resultLinkAccessLogsDOPage.convert(each -> {
+                    ShortLinkStatsAccessRecordRespDTO bean = BeanUtil.toBean(each, ShortLinkStatsAccessRecordRespDTO.class);
+                    bean.setUvType(userUvTypeMap.getOrDefault(each.getUser(), "老访客"));
+                    return bean;
+                }
+        );
     }
 
 }

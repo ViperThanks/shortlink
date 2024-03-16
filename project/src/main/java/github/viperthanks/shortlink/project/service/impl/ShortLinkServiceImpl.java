@@ -2,7 +2,6 @@ package github.viperthanks.shortlink.project.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.DateUtil;
-import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -25,6 +24,7 @@ import github.viperthanks.shortlink.project.dto.resp.ShortLinkCreateRespDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkPageRespDTO;
 import github.viperthanks.shortlink.project.service.ShortLinkService;
+import github.viperthanks.shortlink.project.toolkit.GaoDeUtil;
 import github.viperthanks.shortlink.project.toolkit.HashUtil;
 import github.viperthanks.shortlink.project.toolkit.LinkUtil;
 import github.viperthanks.shortlink.project.toolkit.SQLResultHelper;
@@ -42,7 +42,6 @@ import org.jsoup.nodes.Element;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpMethod;
@@ -60,8 +59,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import static github.viperthanks.shortlink.project.common.constant.RedisConstant.DEFAULT_IS_NULL_DURATION;
 import static github.viperthanks.shortlink.project.common.constant.RedisKeyConstant.SHORTLINK_STATS_UIP_KEY;
 import static github.viperthanks.shortlink.project.common.constant.RedisKeyConstant.SHORTLINK_STATS_UV_KEY;
-import static github.viperthanks.shortlink.project.common.constant.ShortLinkConstant.GAODE_AMAP_REMOTE_SUC;
-import static github.viperthanks.shortlink.project.common.constant.ShortLinkConstant.GAODE_AMAP_REMOTE_URL;
 
 /**
  * desc: 链接业务实现层
@@ -85,10 +82,9 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final LinkAccessLogsMapper linkAccessLogsMapper;
     private final LinkDeviceStatsMapper linkDeviceStatsMapper;
     private final LinkNetworkStatsMapper linkNetworkStatsMapper;
+    private final GaoDeUtil gaoDeUtil;
 
 
-    @Value("${shortlink.stats.locale.amap-key}")
-    private String amqpKey;
 
     //transactional template嵌套太多层了
     @Transactional(rollbackFor = Exception.class)
@@ -346,17 +342,17 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             //调用高德的key
             String province = "unknown";
             String city = "unknown";
-            String json = sendHttpRequest2GaodeMap(ip);
+            String json = gaoDeUtil.sendHttpRequest2GaodeMap(ip);
             JSONObject jsonObject = JSON.parseObject(json);
             String infocode = jsonObject.getString("infocode");
-            if (Objects.equals(infocode, GAODE_AMAP_REMOTE_SUC)) {
+            if (gaoDeUtil.isSuccess(infocode)) {
                 LinkLocaleStatsDO localeStatsDO = LinkLocaleStatsDO.builder()
                         .fullShortUrl(fullShortUrl)
                         .gid(gid)
                         .date(now)
-                        .province(province = handleGaoDeApiRespString(jsonObject.getString("province")))
-                        .city(city = handleGaoDeApiRespString(jsonObject.getString("city")))
-                        .adcode(handleGaoDeApiRespString(jsonObject.getString("adcode")))
+                        .province(province = gaoDeUtil.handleGaoDeApiRespString(jsonObject.getString("province")))
+                        .city(city = gaoDeUtil.handleGaoDeApiRespString(jsonObject.getString("city")))
+                        .adcode(gaoDeUtil.handleGaoDeApiRespString(jsonObject.getString("adcode")))
                         .cnt(1)
                         .country("中国")
                         .build();
@@ -422,22 +418,6 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         } catch (Exception ex) {
             log.error("执行短链接基本数据统计时报错 ：fullShortUrl ：{}， gid : {}", fullShortUrl, gid, ex);
         }
-    }
-
-    private String handleGaoDeApiRespString(String string) {
-        if (StringUtils.isBlank(string) || StringUtils.equals(string, "[]")) {
-            return "未知";
-        }
-        return string;
-    }
-
-
-    /**
-     * 发送请求到高德那
-     */
-    private String sendHttpRequest2GaodeMap(String ip) {
-        Map<String, Object> param = Map.of("ip", ip, "key", amqpKey);
-        return HttpUtil.get(GAODE_AMAP_REMOTE_URL, param);
     }
 
     /**

@@ -8,9 +8,7 @@ import com.google.common.collect.ImmutableMap;
 import github.viperthanks.shortlink.admin.common.convention.result.Result;
 import github.viperthanks.shortlink.admin.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import github.viperthanks.shortlink.admin.remote.dto.req.*;
-import github.viperthanks.shortlink.admin.remote.dto.resp.ShortLinkCreateRespDTO;
-import github.viperthanks.shortlink.admin.remote.dto.resp.ShortLinkPageRespDTO;
-import github.viperthanks.shortlink.admin.remote.dto.resp.UrlTitleRespDTO;
+import github.viperthanks.shortlink.admin.remote.dto.resp.*;
 
 import java.util.List;
 import java.util.Map;
@@ -59,6 +57,24 @@ public interface ShortLinkRemoteService {
 
     default Result<UrlTitleRespDTO> getUrlTitleByUrl(String url) {
         String json = HttpUtil.get("http://127.0.0.1:8001/api/shortlink/v1/title?url=%s".formatted(url));
+        return JSON.parseObject(json, new TypeReference<>() {});
+    }
+
+    default Result<ShortLinkStatsRespDTO> oneShortLinkStats(ShortLinkStatsReqDTO requestParam) {
+        ImmutableMap<String, Object> paramMap = ImmutableMap.of("fullShortUrl", requestParam.getFullShortUrl(),
+                "gid", requestParam.getGid(),
+                "startDate", requestParam.getStartDate(),
+                "endDate", requestParam.getEndDate());
+        String json = HttpUtil.get("http://127.0.0.1:8001/api/shortLink/v1/stats", paramMap);
+        return JSON.parseObject(json, new TypeReference<>() {});
+    }
+
+    default Result<IPage<ShortLinkStatsAccessRecordRespDTO>> shortLinkStatsAccessRecord(ShortLinkStatsAccessRecordReqDTO requestParam) {
+        ImmutableMap<String, Object> paramMap = ImmutableMap.of("fullShortUrl", requestParam.getFullShortUrl(),
+                "gid", requestParam.getGid(),
+                "startDate", requestParam.getStartDate(),
+                "endDate", requestParam.getEndDate());
+        String json = HttpUtil.get("http://127.0.0.1:8001/api/shortLink/v1/stats/access-record", paramMap);
         return JSON.parseObject(json, new TypeReference<>() {});
     }
 

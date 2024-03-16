@@ -1,8 +1,11 @@
 package github.viperthanks.shortlink.project.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import github.viperthanks.shortlink.project.common.convention.result.Result;
 import github.viperthanks.shortlink.project.common.convention.result.Results;
+import github.viperthanks.shortlink.project.dto.req.ShortLinkStatsAccessRecordReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkStatsReqDTO;
+import github.viperthanks.shortlink.project.dto.resp.ShortLinkStatsAccessRecordRespDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkStatsRespDTO;
 import github.viperthanks.shortlink.project.service.ShortLinkStatsService;
 import lombok.RequiredArgsConstructor;
@@ -27,5 +30,13 @@ public class ShortLinkStatsController {
     @RequestMapping(value = "/api/shortLink/v1/stats", method = RequestMethod.GET)
     public Result<ShortLinkStatsRespDTO> shortLinkStats(ShortLinkStatsReqDTO requestParam) {
         return Results.success(shortLinkStatsService.oneShortLinkStats(requestParam));
+    }
+
+    /**
+     * 单个短链接指定时间内访客记录
+     */
+    @RequestMapping(value = "/api/shortLink/v1/stats/access-record", method = RequestMethod.GET)
+    public Result<IPage<ShortLinkStatsAccessRecordRespDTO>> shortLinkStatsAccessRecord(ShortLinkStatsAccessRecordReqDTO requestParam) {
+        return Results.success(shortLinkStatsService.shortLinkStatsAccessRecord(requestParam));
     }
 }
