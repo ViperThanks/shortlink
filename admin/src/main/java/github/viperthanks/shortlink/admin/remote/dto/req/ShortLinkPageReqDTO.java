@@ -14,4 +14,9 @@ import lombok.EqualsAndHashCode;
 @Data
 public class ShortLinkPageReqDTO extends Page {
     private String gid;
+
+    /**
+     * 排序标签
+     */
+    private String orderTag;
 }
