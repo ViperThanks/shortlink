@@ -344,6 +344,8 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 
             //locale的 地区的实现
             //调用高德的key
+            String province = "unknown";
+            String city = "unknown";
             String json = sendHttpRequest2GaodeMap(ip);
             JSONObject jsonObject = JSON.parseObject(json);
             String infocode = jsonObject.getString("infocode");
@@ -352,8 +354,8 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                         .fullShortUrl(fullShortUrl)
                         .gid(gid)
                         .date(now)
-                        .province(handleGaoDeApiRespString(jsonObject.getString("province")))
-                        .city(handleGaoDeApiRespString(jsonObject.getString("city")))
+                        .province(province = handleGaoDeApiRespString(jsonObject.getString("province")))
+                        .city(city = handleGaoDeApiRespString(jsonObject.getString("city")))
                         .adcode(handleGaoDeApiRespString(jsonObject.getString("adcode")))
                         .cnt(1)
                         .country("中国")
@@ -381,20 +383,20 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .date(new Date())
                     .build();
             linkBrowserStatsMapper.shortLinkBrowserState(linkBrowserStatsDO);
-
+            String device = LinkUtil.getDevice(request);
             //设备的实现
             LinkDeviceStatsDO linkDeviceStatsDO = LinkDeviceStatsDO.builder()
-                    .device(LinkUtil.getDevice(request))
+                    .device(device)
                     .cnt(1)
                     .gid(gid)
                     .fullShortUrl(fullShortUrl)
                     .date(now)
                     .build();
             linkDeviceStatsMapper.shortLinkDeviceState(linkDeviceStatsDO);
-
+            String network = LinkUtil.getNetwork(request);
             //network 网络的实现
             LinkNetworkStatsDO linkNetworkStatsDO = LinkNetworkStatsDO.builder()
-                    .network(LinkUtil.getNetwork(request))
+                    .network(network)
                     .cnt(1)
                     .gid(gid)
                     .fullShortUrl(fullShortUrl)
@@ -410,6 +412,9 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .ip(ip)
                     .os(os)
                     .browser(browser)
+                    .network(network)
+                    .device(device)
+                    .locale(String.join("-", "中国", province, city))
                     .build();
             linkAccessLogsMapper.insert(linkLogsDO);
 
