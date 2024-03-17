@@ -38,7 +38,8 @@ public interface ShortLinkRemoteService {
         Map<String, Object> requestParamMap = ImmutableMap.of(
                 "gid", requestParam.getGid(),
                 "current", requestParam.getCurrent(),
-                "size", requestParam.getSize());
+                "size", requestParam.getSize(),
+                "orderTag", requestParam.getOrderTag());
         String responseBody = HttpUtil.get("http://127.0.0.1:8001/api/shortlink/v1/page", requestParamMap);
         return JSON.parseObject(responseBody, new TypeReference<>() {});
     }
