@@ -42,6 +42,7 @@ import org.jsoup.nodes.Element;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpMethod;
@@ -86,16 +87,21 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final GaoDeUtil gaoDeUtil;
     private final LinkStatsTodayMapper linkStatsTodayMapper;
 
+    /**
+     * 默认域名
+     */
+    @Value("${shortlink.domain.default}")
+    private String defaultDomain;
 
     //transactional template嵌套太多层了
     @Transactional(rollbackFor = Exception.class)
     @Override
     public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
         String shortLinkSuffix = generateSuffix(requestParam);
-        String fullShortUrl = requestParam.getDomain() + "/" + shortLinkSuffix;
+        String fullShortUrl = defaultDomain + "/" + shortLinkSuffix;
         String fullShortUrlWithProtocol = "http://" + fullShortUrl;
         ShortLinkDO shortLinkDO = ShortLinkDO.builder()
-                .domain(requestParam.getDomain())
+                .domain(defaultDomain)
                 .originUrl(requestParam.getOriginUrl())
                 .gid(requestParam.getGid())
                 .createdType(requestParam.getCreatedType())
@@ -120,7 +126,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .eq(ShortLinkDO::getFullShortUrl, fullShortUrl);
             ShortLinkDO hasShortLinkDO = baseMapper.selectOne(wrapper);
             if (ObjectUtils.isNotEmpty(hasShortLinkDO)) {
-                String warnMsg = String.format("生成短链接重复，检查domain %s 和url %s 是否重复！", requestParam.getDomain(), requestParam.getOriginUrl());
+                String warnMsg = String.format("生成短链接重复，检查domain %s 和url %s 是否重复！", defaultDomain, requestParam.getOriginUrl());
                 log.warn(warnMsg);
                 throw new ClientException(warnMsg);
             }
@@ -205,7 +211,8 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     @Override
     public void restoreUrl(String uri, HttpServletRequest request, HttpServletResponse response) {
         String serverName = request.getServerName();
-        final String fullShortUrl = serverName + '/' + uri;
+        int serverPort = request.getServerPort();
+        final String fullShortUrl = serverName + ":" + serverPort + '/' + uri;
         String originalLink = stringRedisTemplate.opsForValue().get(RedisKeyConstant.GOTO_SHORTLINK_KEY.formatted(fullShortUrl));
         if (StringUtils.isNotBlank(originalLink)) {
             doShortLinkStates(fullShortUrl, null, request, response);
