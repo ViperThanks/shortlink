@@ -13,6 +13,9 @@ import org.apache.ibatis.annotations.Update;
  */
 public interface ShortLinkMapper extends BaseMapper<ShortLinkDO> {
 
+    /**
+     * 增加历史记录
+     */
     @Update("""
             insert into t_link(
                 gid,

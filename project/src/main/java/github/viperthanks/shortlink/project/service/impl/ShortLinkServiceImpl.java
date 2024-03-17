@@ -51,14 +51,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static github.viperthanks.shortlink.project.common.constant.RedisConstant.DEFAULT_IS_NULL_DURATION;
-import static github.viperthanks.shortlink.project.common.constant.RedisKeyConstant.SHORTLINK_STATS_UIP_KEY;
-import static github.viperthanks.shortlink.project.common.constant.RedisKeyConstant.SHORTLINK_STATS_UV_KEY;
+import static github.viperthanks.shortlink.project.common.constant.RedisKeyConstant.*;
 
 /**
  * desc: 链接业务实现层
@@ -83,7 +84,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final LinkDeviceStatsMapper linkDeviceStatsMapper;
     private final LinkNetworkStatsMapper linkNetworkStatsMapper;
     private final GaoDeUtil gaoDeUtil;
-
+    private final LinkStatsTodayMapper linkStatsTodayMapper;
 
 
     //transactional template嵌套太多层了
@@ -294,7 +295,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             Runnable createAndAddCookieTask = () -> {
                 uvValue.set(UUID.randomUUID().toString());
                 Cookie uvCookie = new Cookie(getUVName(), uvValue.get());
-                uvCookie.setMaxAge(60 * 60 * 60 * 24 * 30);
+                uvCookie.setMaxAge(60 * 60 * 24 * 30);
                 uvCookie.setPath(StringUtils.substring(fullShortUrl, fullShortUrl.lastIndexOf("/"), fullShortUrl.length()));
                 response.addCookie(uvCookie);
                 stringRedisTemplate.opsForSet().add(SHORTLINK_STATS_UV_KEY.formatted(fullShortUrl), uvValue.get());
@@ -323,6 +324,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 ShortLinkGotoDO hasShortLinkGotoDO = shortLinkGotoMapper.selectOne(queryWrapper);
                 gid = hasShortLinkGotoDO.getGid();
             }
+            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
             Date now = new Date();
             int hour = DateUtil.hour(now, true);
             int dayOfWeek = DateUtil.dayOfWeek(now);
@@ -414,6 +416,22 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .locale(String.join("-", "中国", province, city))
                     .build();
             linkAccessLogsMapper.insert(linkLogsDO);
+
+            Long todayUvAdded = stringRedisTemplate.opsForSet().add(SHORTLINK_STATS_TODAY_UV_KEY.formatted(dateFormat.format(now), fullShortUrl),uvValue.get());
+            Long todayUipAdded = stringRedisTemplate.opsForSet().add(SHORTLINK_STATS_TODAY_UIP_KEY.formatted(dateFormat.format(now), fullShortUrl), ip);
+            boolean todayFirstUvFlag = ObjectUtils.compare(todayUvAdded, 0L) > 0;
+            boolean todayFirstUipFlag = ObjectUtils.compare(todayUipAdded, 0L) > 0;
+            //today的实现
+            LinkStatsTodayDO linkStatsTodayDO = LinkStatsTodayDO.builder()
+                    .date(now)
+                    .gid(gid)
+                    .fullShortUrl(fullShortUrl)
+                    .todayPv(1)
+                    .todayUv(todayFirstUvFlag ? 1 : 0)
+                    .todayUip(todayFirstUipFlag ? 1 : 0)
+                    .build();
+
+            linkStatsTodayMapper.shortLinkTodayStates(linkStatsTodayDO);
 
             //历史记录+1
             baseMapper.incrementStats(gid, fullShortUrl, 1, uvFirstFlag.get() ? 1 : 0, ipFirstFlag ? 1 : 0);

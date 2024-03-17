@@ -46,14 +46,5 @@ public class LinkStatsTodayDO extends BaseDO {
     * 今日ip数
     */
     private Integer todayUip;
-    /**
-    * 用户名
-    */
-    private String userName;
-
-    /**
-    * 状态
-    */
-    private Integer status;
 
 }

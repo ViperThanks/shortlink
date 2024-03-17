@@ -31,4 +31,14 @@ public final class RedisKeyConstant {
      * 短链接基本属性UV key
      */
     public static final String SHORTLINK_STATS_UIP_KEY = "shortlink_stats:uip:%s";
+
+    /**
+     * 短链接今日访问基本属性UV key
+     */
+    public static final String SHORTLINK_STATS_TODAY_UV_KEY = "shortlink_stats_today:uv:%s:%s";
+
+    /**
+     * 短链接今日访问基本属性UV key
+     */
+    public static final String SHORTLINK_STATS_TODAY_UIP_KEY = "shortlink_stats_today:uip:%s:%s";
 }
