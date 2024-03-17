@@ -3,9 +3,11 @@ package github.viperthanks.shortlink.project.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import github.viperthanks.shortlink.project.dao.entity.ShortLinkDO;
+import github.viperthanks.shortlink.project.dto.req.ShortLinkBatchCreateReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkCreateReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkPageReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkUpdateReqDTO;
+import github.viperthanks.shortlink.project.dto.resp.ShortLinkBatchCreateRespDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkCreateRespDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkPageRespDTO;
@@ -48,4 +50,12 @@ public interface ShortLinkService extends IService<ShortLinkDO> {
 
      */
     void restoreUrl(String requestParam, HttpServletRequest request, HttpServletResponse response);
+
+    /**
+     * 批量创建短链接
+     *
+     * @param requestParam 批量创建短链接请求参数
+     * @return 批量创建短链接返回参数
+     */
+    ShortLinkBatchCreateRespDTO batchCreateShortLink(ShortLinkBatchCreateReqDTO requestParam);
 }

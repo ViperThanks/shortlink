@@ -3,9 +3,11 @@ package github.viperthanks.shortlink.project.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import github.viperthanks.shortlink.project.common.convention.result.Result;
 import github.viperthanks.shortlink.project.common.convention.result.Results;
+import github.viperthanks.shortlink.project.dto.req.ShortLinkBatchCreateReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkCreateReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkPageReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkUpdateReqDTO;
+import github.viperthanks.shortlink.project.dto.resp.ShortLinkBatchCreateRespDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkCreateRespDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkPageRespDTO;
@@ -69,4 +71,13 @@ public class ShortLinkController {
         shortLinkService.updateShortLink(requestParam);
         return Results.success();
     }
+
+    /**
+     * 批量创建短链接
+     */
+    @PostMapping("/api/short-link/v1/create/batch")
+    public Result<ShortLinkBatchCreateRespDTO> batchCreateShortLink(@RequestBody ShortLinkBatchCreateReqDTO requestParam) {
+        return Results.success(shortLinkService.batchCreateShortLink(requestParam));
+    }
+
 }

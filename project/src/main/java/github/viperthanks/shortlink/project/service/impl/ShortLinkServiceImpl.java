@@ -17,12 +17,11 @@ import github.viperthanks.shortlink.project.common.database.BaseDO;
 import github.viperthanks.shortlink.project.common.enums.ValidDateTypeEnum;
 import github.viperthanks.shortlink.project.dao.entity.*;
 import github.viperthanks.shortlink.project.dao.mapper.*;
+import github.viperthanks.shortlink.project.dto.req.ShortLinkBatchCreateReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkCreateReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkPageReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkUpdateReqDTO;
-import github.viperthanks.shortlink.project.dto.resp.ShortLinkCreateRespDTO;
-import github.viperthanks.shortlink.project.dto.resp.ShortLinkGroupCountQueryRespDTO;
-import github.viperthanks.shortlink.project.dto.resp.ShortLinkPageRespDTO;
+import github.viperthanks.shortlink.project.dto.resp.*;
 import github.viperthanks.shortlink.project.service.ShortLinkService;
 import github.viperthanks.shortlink.project.toolkit.GaoDeUtil;
 import github.viperthanks.shortlink.project.toolkit.HashUtil;
@@ -47,7 +46,8 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.TransactionException;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -57,6 +57,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static github.viperthanks.shortlink.project.common.constant.RedisConstant.DEFAULT_IS_NULL_DURATION;
@@ -86,6 +87,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final LinkNetworkStatsMapper linkNetworkStatsMapper;
     private final GaoDeUtil gaoDeUtil;
     private final LinkStatsTodayMapper linkStatsTodayMapper;
+    private final TransactionTemplate transactionTemplate;
 
     /**
      * 默认域名
@@ -94,7 +96,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private String defaultDomain;
 
     //transactional template嵌套太多层了
-    @Transactional(rollbackFor = Exception.class)
+
     @Override
     public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
         String shortLinkSuffix = generateSuffix(requestParam);
@@ -117,10 +119,25 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .gid(requestParam.getGid())
                 .fullShortUrl(fullShortUrl)
                 .build();
-        int effectRow = 1;
+        AtomicInteger effectRow = new AtomicInteger(1);
         try {
-            effectRow &= baseMapper.insert(shortLinkDO);
-            effectRow &= shortLinkGotoMapper.insert(shortLinkGotoDO);
+            transactionTemplate.execute(action -> {
+                Object savepoint = action.createSavepoint();
+                try {
+                    int insert = baseMapper.insert(shortLinkDO);
+                    int insert1 = shortLinkGotoMapper.insert(shortLinkGotoDO);
+                    if (!(insert > 0 || insert1 > 0)) {
+                        action.rollbackToSavepoint(savepoint);
+                        log.error("创建短链接出现异常 ：插入link 表返回值为 ： {}   插入goto表的返回值为{}", insert, insert1);
+                        return false;
+                    }
+                    return true;
+                } catch (TransactionException e) {
+                    log.error("创建短链接出现异常 ：", e);
+                    action.rollbackToSavepoint(savepoint);
+                    return false;
+                }
+            });
         } catch (DuplicateKeyException e) {
             LambdaQueryWrapper<ShortLinkDO> wrapper = Wrappers.lambdaQuery(entityClass)
                     .eq(ShortLinkDO::getFullShortUrl, fullShortUrl);
@@ -131,7 +148,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 throw new ClientException(warnMsg);
             }
         }
-        if (SQLResultHelper.isIllegalDMLResult(effectRow)) {
+        if (SQLResultHelper.isIllegalDMLResult(effectRow.get())) {
             throw new ServiceException("新增失败，请重试");
         }
         long linkCacheValidDate = LinkUtil.getLinkCacheValidDate(shortLinkDO.getValidDate());
@@ -441,6 +458,33 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         } catch (Exception ex) {
             log.error("执行短链接基本数据统计时报错 ：fullShortUrl ：{}， gid : {}", fullShortUrl, gid, ex);
         }
+    }
+
+    @Override
+    public ShortLinkBatchCreateRespDTO batchCreateShortLink(ShortLinkBatchCreateReqDTO requestParam) {
+        List<String> originUrls = requestParam.getOriginUrls();
+        List<String> describes = requestParam.getDescribes();
+        List<ShortLinkBaseInfoRespDTO> result = new ArrayList<>();
+        for (int i = 0; i < originUrls.size(); i++) {
+            ShortLinkCreateReqDTO shortLinkCreateReqDTO = BeanUtil.toBean(requestParam, ShortLinkCreateReqDTO.class);
+            shortLinkCreateReqDTO.setOriginUrl(originUrls.get(i));
+            shortLinkCreateReqDTO.setDescribe(describes.get(i));
+            try {
+                ShortLinkCreateRespDTO shortLink = createShortLink(shortLinkCreateReqDTO);
+                ShortLinkBaseInfoRespDTO linkBaseInfoRespDTO = ShortLinkBaseInfoRespDTO.builder()
+                        .fullShortUrl(shortLink.getFullShortUrl())
+                        .originUrl(shortLink.getOriginUrl())
+                        .describe(describes.get(i))
+                        .build();
+                result.add(linkBaseInfoRespDTO);
+            } catch (Throwable ex) {
+                log.error("批量创建短链接失败，原始参数：{}", originUrls.get(i));
+            }
+        }
+        return ShortLinkBatchCreateRespDTO.builder()
+                .total(result.size())
+                .baseLinkInfos(result)
+                .build();
     }
 
     /**
