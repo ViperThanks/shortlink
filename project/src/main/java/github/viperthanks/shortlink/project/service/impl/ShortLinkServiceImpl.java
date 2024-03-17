@@ -127,7 +127,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 try {
                     int insert = baseMapper.insert(shortLinkDO);
                     int insert1 = shortLinkGotoMapper.insert(shortLinkGotoDO);
-                    if (!(insert > 0 || insert1 > 0)) {
+                    if (!(insert > 0 && insert1 > 0)) {
                         action.rollbackToSavepoint(savepoint);
                         log.error("创建短链接出现异常 ： 插入link 表返回值为 ： {}  插入goto表的返回值为{} ", insert, insert1);
                         return false;
