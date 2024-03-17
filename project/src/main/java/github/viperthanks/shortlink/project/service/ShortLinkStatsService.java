@@ -1,6 +1,7 @@
 package github.viperthanks.shortlink.project.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import github.viperthanks.shortlink.project.dto.req.ShortLinkGroupStatsReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkStatsAccessRecordReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkStatsReqDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkStatsAccessRecordRespDTO;
@@ -18,6 +19,8 @@ public interface ShortLinkStatsService {
      * 访问单个短链接指定时间内监控数据
      */
     ShortLinkStatsRespDTO oneShortLinkStats(ShortLinkStatsReqDTO requestParam);
+
+    ShortLinkStatsRespDTO groupShortLinkStats(ShortLinkGroupStatsReqDTO requestParam);
 
     /**
      * 单个短链接指定时间内访客记录

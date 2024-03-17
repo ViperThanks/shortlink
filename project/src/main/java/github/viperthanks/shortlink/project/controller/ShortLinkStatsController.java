@@ -3,6 +3,7 @@ package github.viperthanks.shortlink.project.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import github.viperthanks.shortlink.project.common.convention.result.Result;
 import github.viperthanks.shortlink.project.common.convention.result.Results;
+import github.viperthanks.shortlink.project.dto.req.ShortLinkGroupStatsReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkStatsAccessRecordReqDTO;
 import github.viperthanks.shortlink.project.dto.req.ShortLinkStatsReqDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkStatsAccessRecordRespDTO;
@@ -30,6 +31,14 @@ public class ShortLinkStatsController {
     @RequestMapping(value = "/api/shortLink/v1/stats", method = RequestMethod.GET)
     public Result<ShortLinkStatsRespDTO> shortLinkStats(ShortLinkStatsReqDTO requestParam) {
         return Results.success(shortLinkStatsService.oneShortLinkStats(requestParam));
+    }
+
+    /**
+     * 访问分组短链接指定时间内监控数据
+     */
+    @RequestMapping(value = "/api/shortLink/v1/stats/group", method = RequestMethod.GET)
+    public Result<ShortLinkStatsRespDTO> groupShortLinkStats(ShortLinkGroupStatsReqDTO requestParam) {
+        return Results.success(shortLinkStatsService.groupShortLinkStats(requestParam));
     }
 
     /**

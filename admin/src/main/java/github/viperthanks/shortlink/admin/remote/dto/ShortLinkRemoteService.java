@@ -70,6 +70,14 @@ public interface ShortLinkRemoteService {
         return JSON.parseObject(json, new TypeReference<>() {});
     }
 
+    default Result<ShortLinkStatsRespDTO> groupShortLinkStats(ShortLinkGroupStatsReqDTO requestParam) {
+        ImmutableMap<String, Object> paramMap = ImmutableMap.of("gid", requestParam.getGid(),
+                "startDate", requestParam.getStartDate(),
+                "endDate", requestParam.getEndDate());
+        String json = HttpUtil.get("http://127.0.0.1:8001/api/shortLink/v1/stats/group", paramMap);
+        return JSON.parseObject(json, new TypeReference<>() {});
+    }
+
     default Result<IPage<ShortLinkStatsAccessRecordRespDTO>> shortLinkStatsAccessRecord(ShortLinkStatsAccessRecordReqDTO requestParam) {
         ImmutableMap<String, Object> paramMap = ImmutableMap.of("fullShortUrl", requestParam.getFullShortUrl(),
                 "gid", requestParam.getGid(),
@@ -78,5 +86,4 @@ public interface ShortLinkRemoteService {
         String json = HttpUtil.get("http://127.0.0.1:8001/api/shortLink/v1/stats/access-record", paramMap);
         return JSON.parseObject(json, new TypeReference<>() {});
     }
-
 }
