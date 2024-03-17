@@ -33,6 +33,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
@@ -121,14 +122,14 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .build();
         AtomicInteger effectRow = new AtomicInteger(1);
         try {
-            transactionTemplate.execute(action -> {
+            Boolean res = transactionTemplate.execute(action -> {
                 Object savepoint = action.createSavepoint();
                 try {
                     int insert = baseMapper.insert(shortLinkDO);
                     int insert1 = shortLinkGotoMapper.insert(shortLinkGotoDO);
                     if (!(insert > 0 || insert1 > 0)) {
                         action.rollbackToSavepoint(savepoint);
-                        log.error("创建短链接出现异常 ：插入link 表返回值为 ： {}   插入goto表的返回值为{}", insert, insert1);
+                        log.error("创建短链接出现异常 ： 插入link 表返回值为 ： {}  插入goto表的返回值为{} ", insert, insert1);
                         return false;
                     }
                     return true;
@@ -138,6 +139,9 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     return false;
                 }
             });
+            if (BooleanUtils.isNotTrue(res)) {
+                throw new ServiceException("服务器异常，请稍后重试");
+            }
         } catch (DuplicateKeyException e) {
             LambdaQueryWrapper<ShortLinkDO> wrapper = Wrappers.lambdaQuery(entityClass)
                     .eq(ShortLinkDO::getFullShortUrl, fullShortUrl);
