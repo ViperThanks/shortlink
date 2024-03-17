@@ -433,7 +433,7 @@ public class ShortLinkStatsServiceImpl implements ShortLinkStatsService {
 
     @Override
     public IPage<ShortLinkStatsAccessRecordRespDTO> groupShortLinkStatsAccessRecord(ShortLinkGroupStatsAccessRecordReqDTO requestParam) {
-//构建
+        //构建
         LambdaQueryWrapper<LinkAccessLogsDO> queryWrapper = Wrappers.lambdaQuery(LinkAccessLogsDO.class)
                 .eq(LinkAccessLogsDO::getGid, requestParam.getGid())
                 .eq(LinkAccessLogsDO::getDelFlag, 0)
