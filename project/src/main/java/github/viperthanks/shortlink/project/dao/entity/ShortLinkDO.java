@@ -98,4 +98,22 @@ public class ShortLinkDO extends BaseDO {
      */
     private String favicon;
 
+    /**
+     * 今日pv
+     */
+    @TableField(exist = false)
+    private Integer todayPv;
+
+    /**
+     * 今日uv
+     */
+    @TableField(exist = false)
+    private Integer todayUv;
+
+    /**
+     * 今日ip数
+     */
+    @TableField(exist = false)
+    private Integer todayUip;
+
 }
