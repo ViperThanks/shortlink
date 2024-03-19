@@ -26,8 +26,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.concurrent.TimeUnit;
 
-import static github.viperthanks.shortlink.project.common.constant.RedisConstant.DEFAULT_IS_NULL_DURATION;
-
 /**
  * desc:
  *
@@ -147,27 +145,17 @@ public class  RecycleBinServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLi
         if (StringUtils.isAnyBlank(requestParam.getGid(), requestParam.getFullShortUrl())) {
             throw new ClientException("参数错误，请重试");
         }
-        //组装query wrapper
-        LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
-                .eq(ShortLinkDO::getGid, requestParam.getGid())
-                .eq(ShortLinkDO::getFullShortUrl, requestParam.getFullShortUrl())
-                .eq(ShortLinkDO::getEnableStatus, 1)
-                .eq(ShortLinkDO::getDelFlag, 0);
-        ShortLinkDO shortLinkDO = baseMapper.selectOne(queryWrapper);
-        if (null == shortLinkDO) {
-            throw new ClientException("查找不到改短链接数据，请重试");
-        }
-        //组装update wrapper
         LambdaUpdateWrapper<ShortLinkDO> updateWrapper = Wrappers.lambdaUpdate(ShortLinkDO.class)
-                .eq(ShortLinkDO::getGid, requestParam.getGid())
                 .eq(ShortLinkDO::getFullShortUrl, requestParam.getFullShortUrl())
+                .eq(ShortLinkDO::getGid, requestParam.getGid())
                 .eq(ShortLinkDO::getEnableStatus, 1)
-                .eq(ShortLinkDO::getDelFlag, 0)
-                .set(ShortLinkDO::getDelFlag, 1);
-        boolean update = this.update(updateWrapper);
-        if (!update) {
-            throw new ServiceException("修改失败，请重试");
-        }
-        stringRedisTemplate.opsForValue().set(RedisKeyConstant.GOTO_SHORTLINK_IS_NULL_KEY.formatted(requestParam.getFullShortUrl()), "-", DEFAULT_IS_NULL_DURATION);
+                .eq(ShortLinkDO::getDelTime, 0L)
+                .eq(ShortLinkDO::getDelFlag, 0);
+        baseMapper.delete(updateWrapper);
+        ShortLinkDO delShortLinkDO = ShortLinkDO.builder()
+                .delTime(System.currentTimeMillis())
+                .build();
+        delShortLinkDO.setDelFlag(1);
+        baseMapper.update(delShortLinkDO, updateWrapper);
     }
 }

@@ -99,6 +99,11 @@ public class ShortLinkDO extends BaseDO {
     private String favicon;
 
     /**
+     * 删除时间
+     */
+    private Long delTime;
+
+    /**
      * 今日pv
      */
     @TableField(exist = false)
