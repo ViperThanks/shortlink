@@ -3,7 +3,9 @@ package github.viperthanks.shortlink.project.toolkit;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.commons.lang3.StringUtils;
 
+import java.net.URI;
 import java.util.Date;
 
 import static github.viperthanks.shortlink.project.common.constant.ShortLinkConstant.DEFAULT_CACHE_EXPIRE_TIME;
@@ -124,6 +126,22 @@ public class LinkUtil {
         // 这里简单判断IP地址范围，您可能需要更复杂的逻辑
         // 例如，通过调用IP地址库或调用第三方服务来判断网络类型
         return actualIp.startsWith("192.168.") || actualIp.startsWith("10.") ? "WIFI" : "Mobile";
+    }
+
+
+    /**
+     * 获取原始链接的域名
+     * 如果包含www开头的话需要去掉
+     */
+    public static String extractDomain(String url) {
+        String domain = null;
+        try {
+            URI uri = new URI(url);
+            domain = StringUtils.remove(uri.getHost(), "www.");
+        } catch (Exception ignored) {
+
+        }
+        return domain;
     }
 
 }

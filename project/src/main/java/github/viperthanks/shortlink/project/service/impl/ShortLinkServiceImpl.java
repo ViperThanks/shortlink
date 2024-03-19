@@ -14,6 +14,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import github.viperthanks.shortlink.project.common.cofig.GotoDomainWhiteListProperties;
 import github.viperthanks.shortlink.project.common.constant.RedisKeyConstant;
 import github.viperthanks.shortlink.project.common.convention.exception.ClientException;
 import github.viperthanks.shortlink.project.common.convention.exception.ServiceException;
@@ -101,6 +102,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final TransactionTemplate transactionTemplate;
     private final LinkStatsTodayService linkStatsTodayService;
     private final DelayShortLinkStatsProducer delayShortLinkStatsProducer;
+    private final GotoDomainWhiteListProperties gotoDomainWhiteListProperties;
 
     /**
      * 默认域名
@@ -112,6 +114,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 
     @Override
     public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
+        verificationWhitelist(requestParam.getOriginUrl());
         String shortLinkSuffix = generateSuffix(requestParam);
         String fullShortUrl = defaultDomain + "/" + shortLinkSuffix;
         String fullShortUrlWithProtocol = "http://" + fullShortUrl;
@@ -224,6 +227,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
      */
     @Override
     public void updateShortLink(ShortLinkUpdateReqDTO requestParam) {
+        verificationWhitelist(requestParam.getOriginUrl());
         LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
                 .eq(ShortLinkDO::getGid, requestParam.getOriginGid())
                 .eq(ShortLinkDO::getFullShortUrl, requestParam.getFullShortUrl())
@@ -623,6 +627,22 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         } finally {
             rLock.unlock();
         }
+    }
+
+
+    private void verificationWhitelist(final String originUrl) {
+        if (StringUtils.isBlank(originUrl)) {
+            throw new ClientException("请输入正确的原始url");
+        }
+        Boolean enable = gotoDomainWhiteListProperties.getEnable();
+        if (BooleanUtils.isNotTrue(enable)) {
+            return;
+        }
+        gotoDomainWhiteListProperties.getDetails()
+                .stream()
+                .filter(item -> item.equals(LinkUtil.extractDomain(originUrl)))
+                .findFirst()
+                .orElseThrow(() -> new ClientException("该短链接不适合 ， 合适的在这里 %s ".formatted(gotoDomainWhiteListProperties.getNames())));
     }
 
 
