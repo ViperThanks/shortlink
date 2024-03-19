@@ -24,6 +24,10 @@ public enum BaseErrorCode implements IErrorCode {
 
     // ========== 一级宏观错误码 系统执行出错 ==========
     SERVICE_ERROR("B000001", "系统执行出错"),
+
+    // ========== 二级宏观错误码 系统执行超时 ==========
+    FLOW_LIMIT_ERROR("A000300", "当前系统繁忙，请稍后重试"),
+
     // ========== 二级宏观错误码 系统执行超时 ==========
     SERVICE_TIMEOUT_ERROR("B000100", "系统执行超时"),
 
