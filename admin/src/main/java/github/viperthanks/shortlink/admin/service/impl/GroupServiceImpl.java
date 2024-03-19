@@ -23,7 +23,11 @@ import github.viperthanks.shortlink.admin.toolkit.RandomStringGenerator;
 import github.viperthanks.shortlink.admin.toolkit.SQLResultHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -31,6 +35,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import static github.viperthanks.shortlink.admin.common.constant.RedisCacheConstant.LOCK_GROUP_CREAT_KEY;
 
 /**
  * desc: 短链接service实现类
@@ -44,6 +50,9 @@ import java.util.stream.Collectors;
 public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implements GroupService {
 
     private final ShortLinkRemoteService shortLinkRemoteService;
+    private final RedissonClient redissonClient;
+    @Value("${shortlink.group.max-limit}")
+    private Long groupMaxLimit;
     /**
      * 默认的gid长度
      */
@@ -63,17 +72,30 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
         if (StringUtils.length(groupName) == 0) {
             throw new ClientException("短链接名不能为空白");
         }
-        String gid = generateUniqueGid(username);
-        //构造GroupDO
-        GroupDO groupDO = GroupDO.builder()
-                .gid(gid)
-                .sortOrder(0)
-                .username(username)
-                .name(groupName)
-                .build();
-        int effectRow = baseMapper.insert(groupDO);
-        if (SQLResultHelper.isIllegalDMLResult(effectRow)) {
-            throw new ServiceException("插入失败，请重试");
+        RLock lock = redissonClient.getLock(LOCK_GROUP_CREAT_KEY.formatted(username));
+        lock.lock();
+        try {
+            LambdaQueryWrapper<GroupDO> queryWrapper = Wrappers.lambdaQuery(GroupDO.class)
+                    .eq(GroupDO::getUsername, username)
+                    .eq(GroupDO::getDelFlag, 0);
+            Long count = baseMapper.selectCount(queryWrapper);
+            if (ObjectUtils.compare(count, groupMaxLimit) >= 0) {
+                throw new ClientException("你的分组已超出最大上限：%s，请重新规划".formatted(groupMaxLimit));
+            }
+            String gid = generateUniqueGid(username);
+            //构造GroupDO
+            GroupDO groupDO = GroupDO.builder()
+                    .gid(gid)
+                    .sortOrder(0)
+                    .username(username)
+                    .name(groupName)
+                    .build();
+            int effectRow = baseMapper.insert(groupDO);
+            if (SQLResultHelper.isIllegalDMLResult(effectRow)) {
+                throw new ServiceException("插入失败，请重试");
+            }
+        }finally {
+            lock.unlock();
         }
     }
 

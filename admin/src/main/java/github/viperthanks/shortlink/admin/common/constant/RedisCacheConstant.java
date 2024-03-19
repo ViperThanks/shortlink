@@ -9,8 +9,18 @@ import org.apache.commons.lang3.StringUtils;
  * @since 15/2/2024
  */
 public final class RedisCacheConstant {
-    private static final String LOCK_COMMON_PREFIX = "shortlink:lock:";
+    /**
+     * 锁公共前缀
+     */
+    private static final String LOCK_COMMON_PREFIX = "shortlink:admin:lock:";
+    /**
+     * 用户注册分布式锁key
+     */
     public static final String LOCK_USER_REGISTER_KEY = LOCK_COMMON_PREFIX + "user-register:";
+    /**
+     * 用户最大分组分布式锁key
+     */
+    public static final String LOCK_GROUP_CREAT_KEY = LOCK_COMMON_PREFIX + "group-create:%s";
 
     public static final String LOGIN_USER_PREFIX = "login_user:";
 
