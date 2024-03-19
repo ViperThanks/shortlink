@@ -23,7 +23,6 @@ import github.viperthanks.shortlink.admin.toolkit.SQLResultHelper;
 import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.redisson.api.RBloomFilter;
@@ -35,6 +34,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -145,8 +145,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
             throw new ClientException(UserErrorCodeEnum.USER_NOT_EXIST);
         }
         String key = RedisCacheConstant.LOGIN_USER_PREFIX + requestParam.getUsername();
-        if (BooleanUtils.isTrue(stringRedisTemplate.hasKey(key))) {
-            throw new ClientException("用户已经登录");
+        Set<Object> keys = stringRedisTemplate.opsForHash().keys(key);
+        if (ObjectUtils.isNotEmpty(keys)) {
+            return new UserLoginRespDTO(keys.toArray()[0].toString());
         }
         final String uuid = UUID.randomUUID().toString();
         stringRedisTemplate.opsForHash().put(key, uuid, JSON.toJSONString(userDO));
