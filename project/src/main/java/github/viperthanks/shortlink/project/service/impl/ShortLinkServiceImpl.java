@@ -34,7 +34,6 @@ import github.viperthanks.shortlink.project.service.ShortLinkService;
 import github.viperthanks.shortlink.project.toolkit.GaoDeUtil;
 import github.viperthanks.shortlink.project.toolkit.HashUtil;
 import github.viperthanks.shortlink.project.toolkit.LinkUtil;
-import github.viperthanks.shortlink.project.toolkit.SQLResultHelper;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.Cookie;
@@ -69,7 +68,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static github.viperthanks.shortlink.project.common.constant.RedisConstant.DEFAULT_IS_NULL_DURATION;
@@ -136,7 +134,6 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .gid(requestParam.getGid())
                 .fullShortUrl(fullShortUrl)
                 .build();
-        AtomicInteger effectRow = new AtomicInteger(1);
         try {
             Boolean res = transactionTemplate.execute(action -> {
                 Object savepoint = action.createSavepoint();
@@ -156,7 +153,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 }
             });
             if (BooleanUtils.isNotTrue(res)) {
-                throw new ServiceException("服务器异常，请稍后重试");
+                throw new ServiceException("新增失败，请稍后重试");
             }
         } catch (DuplicateKeyException e) {
             LambdaQueryWrapper<ShortLinkDO> wrapper = Wrappers.lambdaQuery(entityClass)
@@ -167,9 +164,6 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 log.warn(warnMsg);
                 throw new ClientException(warnMsg);
             }
-        }
-        if (SQLResultHelper.isIllegalDMLResult(effectRow.get())) {
-            throw new ServiceException("新增失败，请重试");
         }
         long linkCacheValidDate = LinkUtil.getLinkCacheValidDate(shortLinkDO.getValidDate());
         if (linkCacheValidDate > 0) {
