@@ -1,5 +1,6 @@
 package github.viperthanks.shortlink.project.mq.producter;
 
+import cn.hutool.core.lang.UUID;
 import github.viperthanks.shortlink.project.dto.biz.ShortLinkStatsRecordDTO;
 import lombok.RequiredArgsConstructor;
 import org.redisson.api.RBlockingDeque;
@@ -25,6 +26,7 @@ public class DelayShortLinkStatsProducer {
     public void send(ShortLinkStatsRecordDTO statsRecord) {
         RBlockingDeque<ShortLinkStatsRecordDTO> blockingDeque = redissonClient.getBlockingDeque(DELAY_QUEUE_STATS_KEY);
         RDelayedQueue<ShortLinkStatsRecordDTO> delayedQueue = redissonClient.getDelayedQueue(blockingDeque);
+        statsRecord.setKeys(UUID.fastUUID().toString());
         delayedQueue.offer(statsRecord, 5, TimeUnit.SECONDS);
     }
 }
