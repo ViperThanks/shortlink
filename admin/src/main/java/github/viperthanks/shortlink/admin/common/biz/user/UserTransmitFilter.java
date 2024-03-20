@@ -17,8 +17,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Set;
+
+import static github.viperthanks.shortlink.admin.toolkit.WebUtil.returnJSON;
 
 /**
  * desc: 用户信息传输过滤器
@@ -83,14 +84,5 @@ public class UserTransmitFilter implements Filter {
         }
     }
 
-    private void returnJSON(ServletResponse servletResponse, String returnString) {
-        servletResponse.setCharacterEncoding("UTF-8");
-        servletResponse.setContentType("application/json");
-        try (PrintWriter printWriter = servletResponse.getWriter()) {
-            printWriter.write(returnString);
-            printWriter.flush();
-        } catch (IOException e) {
-            log.error("返回JSON响应时发生错误", e);
-        }
-    }
+
 }
