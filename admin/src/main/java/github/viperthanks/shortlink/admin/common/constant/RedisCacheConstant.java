@@ -16,13 +16,13 @@ public final class RedisCacheConstant {
     /**
      * 用户注册分布式锁key
      */
-    public static final String LOCK_USER_REGISTER_KEY = LOCK_COMMON_PREFIX + "user-register:";
+    public static final String LOCK_USER_REGISTER_KEY = LOCK_COMMON_PREFIX + "user_register:";
     /**
      * 用户最大分组分布式锁key
      */
-    public static final String LOCK_GROUP_CREAT_KEY = LOCK_COMMON_PREFIX + "group-create:%s";
+    public static final String LOCK_GROUP_CREAT_KEY = LOCK_COMMON_PREFIX + "group_create:%s";
 
-    public static final String LOGIN_USER_PREFIX = "login_user:";
+    public static final String LOGIN_USER_PREFIX = "shortlink:admin:login_user:";
 
 
     /**
