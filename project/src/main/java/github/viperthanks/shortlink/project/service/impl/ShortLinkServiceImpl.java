@@ -158,14 +158,9 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 throw new ServiceException("新增失败，请稍后重试");
             }
         } catch (DuplicateKeyException e) {
-            LambdaQueryWrapper<ShortLinkDO> wrapper = Wrappers.lambdaQuery(entityClass)
-                    .eq(ShortLinkDO::getFullShortUrl, fullShortUrl);
-            ShortLinkDO hasShortLinkDO = baseMapper.selectOne(wrapper);
-            if (ObjectUtils.isNotEmpty(hasShortLinkDO)) {
-                String warnMsg = String.format("生成短链接重复，检查domain %s 和url %s 是否重复！", defaultDomain, requestParam.getOriginUrl());
-                log.warn(warnMsg);
-                throw new ClientException(warnMsg);
-            }
+            String warnMsg = String.format("生成短链接重复，检查domain %s 和url %s 是否重复！", defaultDomain, requestParam.getOriginUrl());
+            log.warn(warnMsg);
+            throw new ClientException(warnMsg);
         }
         long linkCacheValidDate = LinkUtil.getLinkCacheValidDate(shortLinkDO.getValidDate());
         if (linkCacheValidDate > 0) {
@@ -751,7 +746,8 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             if (customGenerateCount++ > 10) {
                 throw new ServiceException("短链接重复次数过多，请稍后重试");
             }
-            String originUrl = requestParam.getOriginUrl() + System.currentTimeMillis();
+            String factor = UUID.randomUUID().toString();
+            String originUrl = requestParam.getOriginUrl() + factor;
             shortLinkSuffix = HashUtil.hashToBase62(originUrl);
         } while (shortUriCreateCachePenetrationBloomFilter.contains(defaultDomain + "/" + shortLinkSuffix));
         return shortLinkSuffix;
