@@ -1,5 +1,6 @@
 package github.viperthanks.shortlink.project.controller;
 
+import com.alibaba.csp.sentinel.annotation.SentinelResource;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import github.viperthanks.shortlink.project.common.convention.result.Result;
 import github.viperthanks.shortlink.project.common.convention.result.Results;
@@ -11,6 +12,7 @@ import github.viperthanks.shortlink.project.dto.resp.ShortLinkBatchCreateRespDTO
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkCreateRespDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import github.viperthanks.shortlink.project.dto.resp.ShortLinkPageRespDTO;
+import github.viperthanks.shortlink.project.handler.CustomBlockHandler;
 import github.viperthanks.shortlink.project.service.ShortLinkService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -43,6 +45,11 @@ public class ShortLinkController {
      * 短链接创建
      */
     @RequestMapping(value = "/api/shortlink/v1/create", method = RequestMethod.POST)
+    @SentinelResource(
+            value = "create_short-link",
+            blockHandler = "createShortLinkBlockHandlerMethod",
+            blockHandlerClass = CustomBlockHandler.class
+    )
     public Result<ShortLinkCreateRespDTO> createShortLink(@RequestBody ShortLinkCreateReqDTO requestParam) {
         return Results.success(shortLinkService.createShortLink(requestParam));
     }
