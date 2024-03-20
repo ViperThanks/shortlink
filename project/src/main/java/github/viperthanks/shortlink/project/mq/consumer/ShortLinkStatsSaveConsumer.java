@@ -64,7 +64,7 @@ public class ShortLinkStatsSaveConsumer implements StreamListener<String, MapRec
         String stream = message.getStream();
         RecordId id = message.getId();
         String idStr = String.valueOf(id);
-        if (redisMessageQueueIdempotentHandler.isMessageProcessed(idStr)) {
+        if (!redisMessageQueueIdempotentHandler.isMessageProcessed(idStr)) {
             //判断当前的消息是否执行完成
             if (redisMessageQueueIdempotentHandler.isAccomplish(idStr)) {
                 return;
