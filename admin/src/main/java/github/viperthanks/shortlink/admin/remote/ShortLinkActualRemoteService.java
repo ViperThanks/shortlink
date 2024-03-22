@@ -93,4 +93,33 @@ public interface ShortLinkActualRemoteService {
      */
     @RequestMapping(value = "/api/shortLink/v1/stats/access-record/group", method = RequestMethod.GET)
     Result<Page<ShortLinkStatsAccessRecordRespDTO>> groupShortLinkStatsAccessRecord(@SpringQueryMap ShortLinkGroupStatsAccessRecordReqDTO requestParam);
+
+
+    //回收站相关
+
+    /**
+     * 回收站短链接分页查询
+     * @param requestParam 短链接分页查询参数
+     */
+    @RequestMapping(value = "/api/shortlink/v1/recycle-bin/page", method = RequestMethod.GET)
+    Result<Page<ShortLinkPageRespDTO>> pageRecycleBinShortLink(@SpringQueryMap ShortLinkRecycleBinPageReqDTO requestParam);
+
+    /**
+     * 保存到回收站
+     */
+    @RequestMapping(value = "/api/shortlink/v1/recycle-bin/save", method = RequestMethod.POST)
+    void saveRecycleBin(@RequestBody RecycleBinSaveReqDTO requestParam);
+
+
+    /**
+     * 回收站恢复短链接
+     */
+    @RequestMapping(value = "/api/shortlink/v1/recycle-bin/recover", method = RequestMethod.POST)
+    void recoverFormRecycleBin(@RequestBody RecycleBinRecoverReqDTO requestParam);
+
+    /**
+     * 回收站移除短链接
+     */
+    @RequestMapping(value = "/api/shortlink/v1/recycle-bin/remove", method = RequestMethod.POST)
+    void removeFormRecycleBin(@RequestBody RecycleBinRemoveReqDTO requestParam);
 }
