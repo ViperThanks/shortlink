@@ -1,8 +1,8 @@
 package github.viperthanks.shortlink.admin.controller;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import github.viperthanks.shortlink.admin.common.convention.result.Result;
-import github.viperthanks.shortlink.admin.remote.ShortLinkRemoteService;
+import github.viperthanks.shortlink.admin.remote.ShortLinkActualRemoteService;
 import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkGroupStatsAccessRecordReqDTO;
 import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkGroupStatsReqDTO;
 import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkStatsAccessRecordReqDTO;
@@ -25,14 +25,14 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RequiredArgsConstructor
 public class ShortLinkStatsController {
-    private final ShortLinkRemoteService shortLinkRemoteService;
+    private final ShortLinkActualRemoteService shortLinkActualRemoteService;
 
     /**
      * 访问单个短链接指定时间内监控数据
      */
     @RequestMapping(value = "/api/shortLink/admin/v1/stats", method = RequestMethod.GET)
     public Result<ShortLinkStatsRespDTO> shortLinkStats(ShortLinkStatsReqDTO requestParam) {
-        return shortLinkRemoteService.oneShortLinkStats(requestParam);
+        return shortLinkActualRemoteService.oneShortLinkStats(requestParam);
     }
 
     /**
@@ -40,7 +40,7 @@ public class ShortLinkStatsController {
      */
     @RequestMapping(value = "/api/shortLink/admin/v1/stats/group", method = RequestMethod.GET)
     public Result<ShortLinkStatsRespDTO> groupShortLinkStats(ShortLinkGroupStatsReqDTO requestParam) {
-        return shortLinkRemoteService.groupShortLinkStats(requestParam);
+        return shortLinkActualRemoteService.groupShortLinkStats(requestParam);
     }
 
 
@@ -48,16 +48,16 @@ public class ShortLinkStatsController {
      * 单个短链接指定时间内访客记录
      */
     @RequestMapping(value = "/api/shortLink/admin/v1/stats/access-record", method = RequestMethod.GET)
-    public Result<IPage<ShortLinkStatsAccessRecordRespDTO>> shortLinkStatsAccessRecord(ShortLinkStatsAccessRecordReqDTO requestParam) {
-        return shortLinkRemoteService.shortLinkStatsAccessRecord(requestParam);
+    public Result<Page<ShortLinkStatsAccessRecordRespDTO>> shortLinkStatsAccessRecord(ShortLinkStatsAccessRecordReqDTO requestParam) {
+        return shortLinkActualRemoteService.shortLinkStatsAccessRecord(requestParam);
     }
 
     /**
      * 访问分组短链接指定时间内访客记录
      */
     @RequestMapping(value = "/api/shortLink/admin/v1/stats/access-record/group", method = RequestMethod.GET)
-    public Result<IPage<ShortLinkStatsAccessRecordRespDTO>> groupShortLinkStatsAccessRecord(ShortLinkGroupStatsAccessRecordReqDTO requestParam) {
-        return shortLinkRemoteService.groupShortLinkStatsAccessRecord(requestParam);
+    public Result<Page<ShortLinkStatsAccessRecordRespDTO>> groupShortLinkStatsAccessRecord(ShortLinkGroupStatsAccessRecordReqDTO requestParam) {
+        return shortLinkActualRemoteService.groupShortLinkStatsAccessRecord(requestParam);
     }
 
 }

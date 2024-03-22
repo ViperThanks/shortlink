@@ -1,6 +1,5 @@
 package github.viperthanks.shortlink.admin.remote;
 
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
@@ -9,10 +8,7 @@ import org.springframework.context.annotation.Configuration;
  * @author Viper Thanks
  * @since 25/2/2024
  */
+@Deprecated
 @Configuration
 public class RemoteServiceConfiguration {
-    @Bean
-    public ShortLinkRemoteService shortLinkRemoteService(){
-        return new ShortLinkRemoteService() {};
-    }
 }

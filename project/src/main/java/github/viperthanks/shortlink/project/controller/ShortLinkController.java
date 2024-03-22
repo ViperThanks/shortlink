@@ -82,7 +82,7 @@ public class ShortLinkController {
     /**
      * 批量创建短链接
      */
-    @PostMapping("/api/short-link/v1/create/batch")
+    @PostMapping("/api/shortlink/v1/create/batch")
     public Result<ShortLinkBatchCreateRespDTO> batchCreateShortLink(@RequestBody ShortLinkBatchCreateReqDTO requestParam) {
         return Results.success(shortLinkService.batchCreateShortLink(requestParam));
     }

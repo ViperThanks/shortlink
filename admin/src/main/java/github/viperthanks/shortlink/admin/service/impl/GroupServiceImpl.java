@@ -17,7 +17,7 @@ import github.viperthanks.shortlink.admin.dto.req.ShortLinkGroupSortReqDTO;
 import github.viperthanks.shortlink.admin.dto.req.ShortLinkGroupUpdateReqDTO;
 import github.viperthanks.shortlink.admin.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import github.viperthanks.shortlink.admin.dto.resp.ShortLinkGroupRespDTO;
-import github.viperthanks.shortlink.admin.remote.ShortLinkRemoteService;
+import github.viperthanks.shortlink.admin.remote.ShortLinkActualRemoteService;
 import github.viperthanks.shortlink.admin.service.GroupService;
 import github.viperthanks.shortlink.admin.toolkit.RandomStringGenerator;
 import github.viperthanks.shortlink.admin.toolkit.SQLResultHelper;
@@ -49,7 +49,7 @@ import static github.viperthanks.shortlink.admin.common.constant.RedisCacheConst
 @RequiredArgsConstructor
 public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implements GroupService {
 
-    private final ShortLinkRemoteService shortLinkRemoteService;
+    private final ShortLinkActualRemoteService shortLinkActualRemoteService;
     private final RedissonClient redissonClient;
     @Value("${shortlink.group.max-limit}")
     private Long groupMaxLimit;
@@ -128,7 +128,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
                 .eq(GroupDO::getUsername, UserContext.getUsername())
                 .orderByDesc(Arrays.asList(GroupDO::getSortOrder, GroupDO::getUpdateTime));
         List<GroupDO> groupDOList = baseMapper.selectList(wrapper);
-        List<ShortLinkGroupCountQueryRespDTO> list = shortLinkRemoteService.listGroupShortLinkCount(Lists.transform(groupDOList, GroupDO::getGid)).getData();
+        List<ShortLinkGroupCountQueryRespDTO> list = shortLinkActualRemoteService.listGroupShortLinkCount(Lists.transform(groupDOList, GroupDO::getGid)).getData();
         HashMap<String, Integer> gidCountMap = list.stream()
                 .collect(Collectors.toMap(ShortLinkGroupCountQueryRespDTO::getGid,
                         ShortLinkGroupCountQueryRespDTO::getShortLinkCount,

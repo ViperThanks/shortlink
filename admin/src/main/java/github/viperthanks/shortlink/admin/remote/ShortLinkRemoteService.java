@@ -19,6 +19,7 @@ import java.util.Map;
  * @author Viper Thanks
  * @since 25/2/2024
  */
+@Deprecated
 public interface ShortLinkRemoteService {
 
     /**
