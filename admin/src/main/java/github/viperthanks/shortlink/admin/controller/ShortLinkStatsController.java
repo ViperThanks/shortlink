@@ -2,7 +2,7 @@ package github.viperthanks.shortlink.admin.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import github.viperthanks.shortlink.admin.common.convention.result.Result;
-import github.viperthanks.shortlink.admin.remote.dto.ShortLinkRemoteService;
+import github.viperthanks.shortlink.admin.remote.ShortLinkRemoteService;
 import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkGroupStatsAccessRecordReqDTO;
 import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkGroupStatsReqDTO;
 import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkStatsAccessRecordReqDTO;

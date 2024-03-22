@@ -17,7 +17,7 @@ import github.viperthanks.shortlink.admin.dto.req.ShortLinkGroupSortReqDTO;
 import github.viperthanks.shortlink.admin.dto.req.ShortLinkGroupUpdateReqDTO;
 import github.viperthanks.shortlink.admin.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import github.viperthanks.shortlink.admin.dto.resp.ShortLinkGroupRespDTO;
-import github.viperthanks.shortlink.admin.remote.dto.ShortLinkRemoteService;
+import github.viperthanks.shortlink.admin.remote.ShortLinkRemoteService;
 import github.viperthanks.shortlink.admin.service.GroupService;
 import github.viperthanks.shortlink.admin.toolkit.RandomStringGenerator;
 import github.viperthanks.shortlink.admin.toolkit.SQLResultHelper;

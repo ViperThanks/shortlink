@@ -1,4 +1,4 @@
-package github.viperthanks.shortlink.admin.remote.dto;
+package github.viperthanks.shortlink.admin.remote;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

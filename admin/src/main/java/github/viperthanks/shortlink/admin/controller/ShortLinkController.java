@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import github.viperthanks.shortlink.admin.common.convention.result.Result;
 import github.viperthanks.shortlink.admin.common.convention.result.Results;
 import github.viperthanks.shortlink.admin.dto.resp.ShortLinkGroupCountQueryRespDTO;
-import github.viperthanks.shortlink.admin.remote.dto.ShortLinkRemoteService;
+import github.viperthanks.shortlink.admin.remote.ShortLinkRemoteService;
 import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkBatchCreateReqDTO;
 import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkCreateReqDTO;
 import github.viperthanks.shortlink.admin.remote.dto.req.ShortLinkPageReqDTO;

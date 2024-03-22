@@ -1,4 +1,4 @@
-package github.viperthanks.shortlink.admin.remote.dto;
+package github.viperthanks.shortlink.admin.remote;
 
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson2.JSON;
@@ -9,6 +9,7 @@ import github.viperthanks.shortlink.admin.common.convention.result.Result;
 import github.viperthanks.shortlink.admin.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import github.viperthanks.shortlink.admin.remote.dto.req.*;
 import github.viperthanks.shortlink.admin.remote.dto.resp.*;
+import github.viperthanks.shortlink.admin.remote.req.*;
 
 import java.util.List;
 import java.util.Map;
