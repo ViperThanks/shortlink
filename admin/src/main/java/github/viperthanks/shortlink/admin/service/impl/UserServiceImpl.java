@@ -35,7 +35,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
+
+import static github.viperthanks.shortlink.admin.common.constant.RedisExpireConstant.USER_LOGIN_EXPIRE_TIME;
+import static github.viperthanks.shortlink.admin.common.constant.RedisExpireConstant.USER_LOGIN_REFRESH_EXPIRE_TIME;
 
 /**
  * desc: 用户 业务层实现
@@ -147,11 +149,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         String key = RedisCacheConstant.LOGIN_USER_PREFIX + requestParam.getUsername();
         Set<Object> keys = stringRedisTemplate.opsForHash().keys(key);
         if (ObjectUtils.isNotEmpty(keys)) {
+            //刷新有效期
+            stringRedisTemplate.expire(key, USER_LOGIN_REFRESH_EXPIRE_TIME);
             return new UserLoginRespDTO(keys.toArray()[0].toString());
         }
         final String uuid = UUID.randomUUID().toString();
         stringRedisTemplate.opsForHash().put(key, uuid, JSON.toJSONString(userDO));
-        stringRedisTemplate.expire(key, 30, TimeUnit.MINUTES);
+        stringRedisTemplate.expire(key, USER_LOGIN_EXPIRE_TIME);
         return new UserLoginRespDTO(uuid);
     }
 
